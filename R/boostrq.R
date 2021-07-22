@@ -102,7 +102,10 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   }
 
-  RETURN <- list(formula = formula)
+  RETURN <- list(formula = formula,
+                 nu = nu,
+                 offset = quantile(y, offset),
+                 baselearner.names = baselearner)
 
   RETURN$mstop <- function() mstop
 
@@ -174,6 +177,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   }
 
   # RETURN$predict <- function()
+  # RETURN$subset <- function()
 
   class(RETURN) <- "boostrq"
 
