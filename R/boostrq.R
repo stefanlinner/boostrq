@@ -11,7 +11,7 @@
 #' @return coefficient estimastes, coefficient path, and appearances of the different covariates, as list
 #' @export
 #'
-#' @examples boostrq(mpg ~ hp + am, data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' @examples boostrq(mpg ~ brq("hp") + brq("am"), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
 #'
 #' @imports quantreg, checkmate
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn") {
@@ -41,11 +41,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   baselearer.model.matrix <-
     lapply(baselearner,
-           function(x){
-             na.omit(
-               model.matrix(
-                 as.formula(paste(response, "~", x)), data = data)
-             )
+           function(.X){
+             eval(parse(text = .X))
            }
     )
   names(baselearer.model.matrix) <- baselearner
@@ -76,15 +73,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     names(qr.res) <- baselearner
 
     if(m == 1){
-      betahat <-
-        lapply(baselearner,
-               function(x){
-                 vector("numeric", length = length(qr.res[[baselearner]]$coef))
-               }
-        )
-      names(betahat) <- baselearner
-      betahat$offset <- quantile(y, offset)
-
       coefpath <-
         lapply(baselearner,
                function(x){
@@ -102,20 +90,94 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
     best.baselearner <- names(which.min(risk))[1]
 
-    betahat[[best.baselearner]] <- betahat[[best.baselearner]] + qr.res[[best.baselearner]]$coef * nu
-
     coefpath[[best.baselearner]][, m] <- qr.res[[best.baselearner]]$coef * nu
 
     if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], 10)) > 0)){
-      appearances[m] <- best.baselearner
+      appearances[m] <- which.min(risk)
     } else {
-      appearances[m] <- "Intercept"
+      appearances[m] <- 0
     }
 
     fit <- fit + qr.res[[best.baselearner]]$fitted.values * nu
 
   }
 
-  list(coefficients = betahat, covariates = appearances, coefpath = coefpath)
+  RETURN <- list(formula = formula)
+
+  RETURN$mstop <- function() mstop
+
+  RETURN$xselect <- function() appearances
+
+  RETURN$fitted <- function() fit
+
+  RETURN$resid <- function() y - fit
+
+  RETURN$risk <- function() {
+    loss(y, fit, tau)
+  }
+
+  RETURN$baselearner.matrix <- function(which = NULL) {
+    if(is.null(which)){
+      which <- baselearner
+    }
+    baselearer.model.matrix[[which]]
+  }
+
+  RETURN$coef <- function(which = NULL, aggregate = "sum") {
+
+    if(is.null(which)){
+      which <- baselearner
+    }
+
+    if(aggregate == "none"){
+      coefpath.none <- coefpath[[which]]
+      names(coefpath.none) <- which
+      coefpath.none$offset <- quantile(y, offset)
+      return(coefpath.none)
+    }
+
+    if(aggregate == "sum"){
+
+      if(!is.list(coefpath[[which]])){
+      coefpath.sum <- lapply(list(coefpath[[which]]),
+             function(x){
+               rowSums(x)
+             })
+      } else{
+        coefpath.sum <- lapply(coefpath[[which]],
+                               function(x){
+                                 rowSums(x)
+                               })
+      }
+      names(coefpath.sum) <- which
+      coefpath.sum$offset <- quantile(y, offset)
+      return(coefpath.sum)
+    }
+
+    if(aggregate == "cumsum"){
+      if(!is.list(coefpath[[which]])){
+      coefpath.cumsum <- lapply(list(coefpath[[which]]),
+                             function(x){
+                               apply(x, MARGIN = 1, FUN = cumsum)
+                             })
+      } else {
+        coefpath.cumsum <- lapply(coefpath[[which]],
+                                  function(x){
+                                    apply(x, MARGIN = 1, FUN = cumsum)
+                                  })
+      }
+      names(coefpath.cumsum) <- which
+      coefpath.cumsum$offset <- quantile(y, offset)
+      return(coefpath.cumsum)
+    }
+
+  }
+
+  # RETURN$predict <- function()
+
+  class(RETURN) <- "boostrq"
+
+  RETURN
 
 }
+

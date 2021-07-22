@@ -12,3 +12,7 @@ brq <- function(vars){
       data = data)
   )
 }
+
+brqss <- function(vars){
+
+}
