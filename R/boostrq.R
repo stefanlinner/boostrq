@@ -11,7 +11,7 @@
 #' @return coefficient estimastes, coefficient path, and appearances of the different covariates, as list
 #' @export
 #'
-#' @examples boostrq(mpg ~ brq("hp") + brq("am"), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
 #'
 #' @imports quantreg, checkmate
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn") {
@@ -22,11 +22,11 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
   assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
   assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
+  assert_character(method, len = 1)
   assert_subset(method, choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
   assert_data_frame(data)
 
   response <- all.vars(formula[[2]])
-
   assert_character(response, len = 1)
 
   if(any(is.na(data))){
@@ -41,6 +41,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   baselearer.model.matrix <-
     lapply(baselearner,
+           ## HUHU .X ist gefährlich, wenn in Datensatzvariable so benannt ist
            function(.X){
              eval(parse(text = .X))
            }
@@ -56,7 +57,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   fit <- rep(quantile(y, offset), length(y))
 
 
-
+  ## HUHU das hier vielleicht anpassen, dass wenn man mehr iterationen möchte nicht wieder von vorne beginnen muss
+  ## Siehe auch subset Funktion
   for(m in seq_len(mstop)) {
 
     q.ngradient <- ngradient(y = y, f = fit, tau = tau)
@@ -76,8 +78,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       coefpath <-
         lapply(baselearner,
                function(x){
-                 coefpath.mat <- matrix(data = 0, ncol = mstop, nrow = length(qr.res[[baselearner]]$coef))
-                 rownames(coefpath.mat) <-  names(qr.res[[baselearner]]$coef)
+                 coefpath.mat <- matrix(data = 0, ncol = mstop, nrow = length(qr.res[[x]]$coef))
+                 rownames(coefpath.mat) <-  names(qr.res[[x]]$coef)
                  coefpath.mat
                }
         )
@@ -88,7 +90,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       warning(paste("Warning: There is no unique best base learner in iteration", m))
     }
 
-    best.baselearner <- names(which.min(risk))[1]
+    best.baselearner <- names(which.min(risk))
 
     coefpath[[best.baselearner]][, m] <- qr.res[[best.baselearner]]$coef * nu
 
@@ -105,7 +107,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   RETURN <- list(formula = formula,
                  nu = nu,
                  offset = quantile(y, offset),
-                 baselearner.names = baselearner)
+                 baselearner.names = baselearner,
+                 call = match.call())
 
   RETURN$mstop <- function() mstop
 
@@ -119,56 +122,55 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     loss(y, fit, tau)
   }
 
+  RETURN$neg.gradients <- function() {
+    ngradient(y, fit, tau)
+  }
+
   RETURN$baselearner.matrix <- function(which = NULL) {
+
+    assert_character(which, max.len = length(baselearner), null.ok = TRUE)
+    assert_subset(which, choices = baselearner)
+
     if(is.null(which)){
       which <- baselearner
     }
-    baselearer.model.matrix[[which]]
+    baselearer.model.matrix[which]
   }
 
   RETURN$coef <- function(which = NULL, aggregate = "sum") {
+
+    assert_character(which, max.len = length(baselearner), null.ok = TRUE)
+    assert_subset(which, choices = baselearner)
+    assert_character(aggregate, len = 1)
+    assert_subset(aggregate, choices = c("sum", "none", "cumsum"))
+
 
     if(is.null(which)){
       which <- baselearner
     }
 
     if(aggregate == "none"){
-      coefpath.none <- coefpath[[which]]
+      coefpath.none <- coefpath[which]
       names(coefpath.none) <- which
       coefpath.none$offset <- quantile(y, offset)
       return(coefpath.none)
     }
 
     if(aggregate == "sum"){
-
-      if(!is.list(coefpath[[which]])){
-      coefpath.sum <- lapply(list(coefpath[[which]]),
-             function(x){
-               rowSums(x)
-             })
-      } else{
-        coefpath.sum <- lapply(coefpath[[which]],
-                               function(x){
-                                 rowSums(x)
-                               })
-      }
+      coefpath.sum <- lapply(coefpath[which],
+                             function(x){
+                               rowSums(x)
+                             })
       names(coefpath.sum) <- which
       coefpath.sum$offset <- quantile(y, offset)
       return(coefpath.sum)
     }
 
     if(aggregate == "cumsum"){
-      if(!is.list(coefpath[[which]])){
-      coefpath.cumsum <- lapply(list(coefpath[[which]]),
-                             function(x){
-                               apply(x, MARGIN = 1, FUN = cumsum)
-                             })
-      } else {
-        coefpath.cumsum <- lapply(coefpath[[which]],
-                                  function(x){
-                                    apply(x, MARGIN = 1, FUN = cumsum)
-                                  })
-      }
+      coefpath.cumsum <- lapply(coefpath[which],
+                                function(x){
+                                  apply(x, MARGIN = 1, FUN = cumsum)
+                                })
       names(coefpath.cumsum) <- which
       coefpath.cumsum$offset <- quantile(y, offset)
       return(coefpath.cumsum)

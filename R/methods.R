@@ -1,5 +1,6 @@
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
+  assert_class(object, "boostrq")
   assert_character(aggregate, len = 1)
   assert_subset(aggregate, choices = c("sum", "cumsum", "none"), empty.ok = FALSE)
 
@@ -14,6 +15,8 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
 fitted.boostrq <- function(object, ...) {
 
+  assert_class(object, "boostrq")
+
   args <- list(...)
   if (length(args) > 0) {
     warning("Arguments ", paste(names(args), sep = ", "), " unknown")
@@ -24,6 +27,8 @@ fitted.boostrq <- function(object, ...) {
 }
 
 resid.boostrq <- function(object, ...) {
+
+  assert_class(object, "boostrq")
 
   args <- list(...)
   if (length(args) > 0) {
@@ -41,11 +46,17 @@ resid.boostrq <- function(object, ...) {
 
 print.boostrq <- function(x, ...){
 
+  assert_class(x, "boostrq")
+
   cat("\n")
   cat("\t Boosting Regression Qauntiles\n")
   cat("\n")
 
+  cat("Call: ", deparse(x$call))
+  cat("\n")
+
   cat("formula: ", deparse(x$formula), "\n\n", sep = "")
+  cat("\n")
 
   cat("\t Quantile Regression\n")
   cat("Loss Function: tau * (y - f) * ((y - f) > 0) +
@@ -62,6 +73,8 @@ print.boostrq <- function(x, ...){
 }
 
 residuals.boostrq <- function(object, ...) {
+
+  assert_class(object, "boostrq")
 
   args <- list(...)
   if (length(args) > 0) {
