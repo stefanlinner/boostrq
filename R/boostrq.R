@@ -22,9 +22,9 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
   assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
   assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
-  assert_character(method, len = 1)
+  assert_character(method, len = 1, any.missing = FALSE)
   assert_subset(method, choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
-  assert_data_frame(data)
+  assert_data_frame(data, all.missing = FALSE)
 
   response <- all.vars(formula[[2]])
   assert_character(response, len = 1)
@@ -57,17 +57,18 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   fit <- rep(quantile(y, offset), length(y))
 
 
+  ## HUHU eigene Funktion für boostrq.fit schreiben
   ## HUHU das hier vielleicht anpassen, dass wenn man mehr iterationen möchte nicht wieder von vorne beginnen muss
   ## Siehe auch subset Funktion
   for(m in seq_len(mstop)) {
 
-    q.ngradient <- ngradient(y = y, f = fit, tau = tau)
+    q.ngradient <- quantile.ngradient(y = y, f = fit, tau = tau)
 
     qr.res <-
       lapply(baselearner,
              function(x) {
                qreg <- rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = method)
-               risk[x] <<- loss(y = q.ngradient, f = qreg$fitted.values, tau = tau)
+               risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
 
                qreg
              }
@@ -119,11 +120,11 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   RETURN$resid <- function() y - fit
 
   RETURN$risk <- function() {
-    loss(y, fit, tau)
+    quantile.risk(y, fit, tau)
   }
 
   RETURN$neg.gradients <- function() {
-    ngradient(y, fit, tau)
+    quantile.ngradient(y, fit, tau)
   }
 
   RETURN$baselearner.matrix <- function(which = NULL) {

@@ -1,6 +1,5 @@
 brq <- function(...){
 
-  browser()
   ## HUHU das ist sicherlich nicht die eleganteste Lösung
   data <- get("data", envir = parent.frame())
   response <- get("response", envir = parent.frame())

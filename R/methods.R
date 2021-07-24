@@ -1,7 +1,7 @@
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
   assert_class(object, "boostrq")
-  assert_character(aggregate, len = 1)
+  assert_character(aggregate, len = 1, any.missing = FALSE)
   assert_subset(aggregate, choices = c("sum", "cumsum", "none"), empty.ok = FALSE)
 
   args <- list(...)
