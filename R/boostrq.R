@@ -60,6 +60,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ## HUHU eigene Funktion für boostrq.fit schreiben
   ## HUHU das hier vielleicht anpassen, dass wenn man mehr iterationen möchte nicht wieder von vorne beginnen muss
   ## Siehe auch subset Funktion
+  ##
   for(m in seq_len(mstop)) {
 
     q.ngradient <- quantile.ngradient(y = y, f = fit, tau = tau)
