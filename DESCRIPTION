@@ -7,9 +7,9 @@ Authors@R:
            role = c("aut", "cre"),
            email = "stefan.linner97@gmail.com")
 Description: R implementation of the component-wise boosting algorithm boosting regression quantiles.
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Imports: quantreg, checkmate
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1

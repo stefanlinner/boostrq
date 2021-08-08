@@ -1,19 +1,18 @@
 #' boosting regression quantiles
 #'
-#' @param y independent variable, as vector
-#' @param X covariate matrix including an intercept in the first column, as matrix
 #' @param mstop number of iterations, as integer
 #' @param nu learning rate, as numeric
 #' @param tau quantile parameter, as numeric
 #' @param offset quantile paramter used to initialize the algortihm
 #' @param method the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.
+#' @param formula
+#' @param data
 #'
 #' @return coefficient estimastes, coefficient path, and appearances of the different covariates, as list
 #' @export
 #'
 #' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
 #'
-#' @imports quantreg, checkmate
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn") {
 
   mstop <- as.integer(mstop)

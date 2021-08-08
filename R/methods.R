@@ -1,3 +1,14 @@
+#' estimated coefficients of boosting regression quantiles
+#'
+#' @param object
+#' @param which
+#' @param aggregate
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
   assert_class(object, "boostrq")
@@ -13,6 +24,15 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
 }
 
+#' fitted values of boosting regression quantiles
+#'
+#' @param object
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 fitted.boostrq <- function(object, ...) {
 
   assert_class(object, "boostrq")
@@ -26,6 +46,15 @@ fitted.boostrq <- function(object, ...) {
 
 }
 
+#' residuals of boosting regression quantiles
+#'
+#' @param object
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 resid.boostrq <- function(object, ...) {
 
   assert_class(object, "boostrq")
@@ -44,6 +73,15 @@ resid.boostrq <- function(object, ...) {
 # summary.boostrq <- function(object, ...)
 # print.summary.boostrq <- function(x, ...)
 
+#' printing boosting regression quantiles
+#'
+#' @param x
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 print.boostrq <- function(x, ...){
 
   assert_class(x, "boostrq")
@@ -72,6 +110,15 @@ print.boostrq <- function(x, ...){
 
 }
 
+#' residuals of boosting regression quantiles
+#'
+#' @param object
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 residuals.boostrq <- function(object, ...) {
 
   assert_class(object, "boostrq")

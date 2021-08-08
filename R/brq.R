@@ -1,3 +1,11 @@
+#' base learner for boosting linear regression quantiles
+#'
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 brq <- function(...){
 
   ## HUHU das ist sicherlich nicht die eleganteste Lösung
@@ -42,6 +50,14 @@ brq <- function(...){
   )
 }
 
+#' base learner for boosting nonlinear regression quantiles
+#'
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 brqss <- function(...){
 
 }
