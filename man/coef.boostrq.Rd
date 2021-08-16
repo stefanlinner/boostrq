@@ -7,11 +7,22 @@
 \method{coef}{boostrq}(object, which = NULL, aggregate = "sum", ...)
 }
 \arguments{
-\item{...}{}
+\item{object}{object of class boostrq}
+
+\item{which}{a subset of base-learners}
+
+\item{aggregate}{a character specifying how to aggregate coefficients of single base learners. The default returns the coefficient for the final number of boosting iterations. "cumsum" returns a list with matrices (one per base-learner) with the cumulative coefficients for all iterations. "none" returns a list of matrices where the jth columns of the respective matrix contains coefficients of the base-learner of the jth boosting iteration.}
+
+\item{...}{additional arguments passed to callies}
 }
 \value{
-
+coef extracts the regression coefficients of the fitted boostrq model.
 }
 \description{
 estimated coefficients of boosting regression quantiles
+}
+\examples{
+model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+coef(model, aggregate = "cumsum")
 }

@@ -15,7 +15,9 @@ boostrq(
 )
 }
 \arguments{
-\item{data}{}
+\item{formula}{a symbolic description of the model to be fit.}
+
+\item{data}{a data frame containing the variables stated in the formula.}
 
 \item{mstop}{number of iterations, as integer}
 
@@ -28,12 +30,14 @@ boostrq(
 \item{method}{the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.}
 }
 \value{
-coefficient estimastes, coefficient path, and appearances of the different covariates, as list
+A (generalized) additive quantile regression model is fitted using the boosting regression quantiles algorithm, which is a functional component-wise boosting algorithm.
+The base-learner can be specified via the formula object. brq (linear quantile regression) and brqss(nonlinear quantile regression) are available base-learner.
 }
 \description{
-boosting regression quantiles
+Component-wise functional gradient boosting algorithm to fit a quantile regression model.
 }
 \examples{
-boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
 
 }

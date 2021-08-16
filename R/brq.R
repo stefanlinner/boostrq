@@ -1,16 +1,17 @@
 #' base learner for boosting linear regression quantiles
 #'
-#' @param ...
+#' Base-learner for linear quantile regression.
 #'
-#' @return
+#' @param ... one or more predictor variables.
+#'
+#'
+#' @return brq returns a string, which is used to specifiy the formula in the fitting process.
 #' @export
 #'
-#' @examples
+#' @import checkmate
+#'
+#' @examples brq(hp:cyl, cyl*hp)
 brq <- function(...){
-
-  ## HUHU das ist sicherlich nicht die eleganteste Lösung
-  data <- get("data", envir = parent.frame())
-  response <- get("response", envir = parent.frame())
 
   bl <- as.list(match.call(expand.dots = FALSE))[2][[1]]
 
@@ -41,23 +42,19 @@ brq <- function(...){
   assert_vector(bl, strict = TRUE, any.missing = FALSE, all.missing = FALSE)
   assert_character(bl, null.ok = FALSE)
 
-  na.omit(
-    model.matrix(
-      as.formula(
-        paste(response, "~", paste(bl, collapse = " + "))
-      ),
-      data = data)
-  )
-}
-
-#' base learner for boosting nonlinear regression quantiles
-#'
-#' @param ...
-#'
-#' @return
-#' @export
-#'
-#' @examples
-brqss <- function(...){
+  paste(bl, collapse = " + ")
 
 }
+
+#'
+#' #' base learner for boosting nonlinear regression quantiles
+#' #'
+#' #' @param ...
+#' #'
+#' #' @return
+#' #' @export
+#' #'
+#' #' @examples
+#' brqss <- function(...){
+#'
+#' }

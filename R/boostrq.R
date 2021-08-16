@@ -1,17 +1,24 @@
 #' boosting regression quantiles
 #'
+#' Component-wise functional gradient boosting algorithm to fit a quantile regression model.
+#'
 #' @param mstop number of iterations, as integer
 #' @param nu learning rate, as numeric
 #' @param tau quantile parameter, as numeric
 #' @param offset quantile paramter used to initialize the algortihm
 #' @param method the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.
-#' @param formula
-#' @param data
+#' @param formula a symbolic description of the model to be fit.
+#' @param data a data frame containing the variables stated in the formula.
 #'
-#' @return coefficient estimastes, coefficient path, and appearances of the different covariates, as list
+#' @import quantreg checkmate
+#' @importFrom stats terms as.formula model.matrix na.omit quantile
+#'
+#' @return A (generalized) additive quantile regression model is fitted using the boosting regression quantiles algorithm, which is a functional component-wise boosting algorithm.
+#' The base-learner can be specified via the formula object. brq (linear quantile regression) and brqss(nonlinear quantile regression) are available base-learner.
 #' @export
 #'
-#' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
 #'
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn") {
 
@@ -38,11 +45,26 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   baselearner <-
     attr(terms(formula), "term.labels")
 
-  baselearer.model.matrix <-
+
+  baselearer.formula <-
     lapply(baselearner,
-           ## HUHU .X ist gefährlich, wenn in Datensatzvariable so benannt ist
-           function(.X){
-             eval(parse(text = .X))
+           function(x){
+             eval(parse(text = x))
+           }
+    )
+  names(baselearer.formula) <- baselearner
+
+
+  baselearer.model.matrix <-
+    lapply(baselearer.formula,
+           function(x){
+             na.omit(
+               model.matrix(
+                 as.formula(
+                   paste(response, "~", x)
+                 ),
+                 data = data)
+             )
            }
     )
   names(baselearer.model.matrix) <- baselearner
@@ -59,7 +81,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ## HUHU eigene Funktion für boostrq.fit schreiben
   ## HUHU das hier vielleicht anpassen, dass wenn man mehr iterationen möchte nicht wieder von vorne beginnen muss
   ## Siehe auch subset Funktion
-  ##
   for(m in seq_len(mstop)) {
 
     q.ngradient <- quantile.ngradient(y = y, f = fit, tau = tau)

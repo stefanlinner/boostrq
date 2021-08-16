@@ -7,11 +7,18 @@
 \method{residuals}{boostrq}(object, ...)
 }
 \arguments{
-\item{...}{}
+\item{object}{object of class boostrq}
+
+\item{...}{additional arguments passed to callies}
 }
 \value{
-
+residuals returns the residuals of the fitted boostrq model.
 }
 \description{
 residuals of boosting regression quantiles
+}
+\examples{
+model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+residuals(model)
 }

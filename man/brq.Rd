@@ -7,11 +7,14 @@
 brq(...)
 }
 \arguments{
-\item{...}{}
+\item{...}{one or more predictor variables.}
 }
 \value{
-
+brq returns a string, which is used to specifiy the formula in the fitting process.
 }
 \description{
-base learner for boosting linear regression quantiles
+Base-learner for linear quantile regression.
+}
+\examples{
+brq(hp:cyl, cyl*hp)
 }
