@@ -11,7 +11,7 @@
 #' @import checkmate
 #'
 #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #' coef(model, aggregate = "cumsum")
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
@@ -39,7 +39,7 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 #' @import checkmate
 #'
 #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #' fitted(model)
 fitted.boostrq <- function(object, ...) {
 
@@ -66,7 +66,7 @@ fitted.boostrq <- function(object, ...) {
 #' @import checkmate
 #'
 #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #' model
 print.boostrq <- function(x, ...){
 
@@ -107,7 +107,7 @@ print.boostrq <- function(x, ...){
 #' @import checkmate
 #'
 #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #' residuals(model)
 residuals.boostrq <- function(object, ...) {
 
@@ -142,7 +142,8 @@ residuals.boostrq <- function(object, ...) {
 #' #'
 #' #' @import checkmate
 #' #'
-#' #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #' #' resid(model)
 #' resid.boostrq <- function(object, ...) {
 #'

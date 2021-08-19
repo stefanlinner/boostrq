@@ -4,10 +4,12 @@
 \alias{brq}
 \title{base learner for boosting linear regression quantiles}
 \usage{
-brq(...)
+brq(..., method = "fn")
 }
 \arguments{
 \item{...}{one or more predictor variables.}
+
+\item{method}{the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.}
 }
 \value{
 brq returns a string, which is used to specifiy the formula in the fitting process.
@@ -16,5 +18,5 @@ brq returns a string, which is used to specifiy the formula in the fitting proce
 Base-learner for linear quantile regression.
 }
 \examples{
-brq(hp:cyl, cyl*hp)
+brq(hp:cyl, cyl*hp, method = "fn")
 }

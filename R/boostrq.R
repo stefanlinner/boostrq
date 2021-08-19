@@ -6,21 +6,20 @@
 #' @param nu learning rate, as numeric
 #' @param tau quantile parameter, as numeric
 #' @param offset quantile paramter used to initialize the algortihm
-#' @param method the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.
 #' @param formula a symbolic description of the model to be fit.
 #' @param data a data frame containing the variables stated in the formula.
 #'
 #' @import quantreg checkmate
-#' @importFrom stats terms as.formula model.matrix na.omit quantile
+#' @importFrom stats terms as.formula model.matrix na.omit quantile model.frame
 #'
 #' @return A (generalized) additive quantile regression model is fitted using the boosting regression quantiles algorithm, which is a functional component-wise boosting algorithm.
 #' The base-learner can be specified via the formula object. brq (linear quantile regression) and brqss(nonlinear quantile regression) are available base-learner.
 #' @export
 #'
 #' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #'
-boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn") {
+boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5) {
 
   mstop <- as.integer(mstop)
 
@@ -28,8 +27,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
   assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
   assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
-  assert_character(method, len = 1, any.missing = FALSE)
-  assert_subset(method, choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
   assert_data_frame(data, all.missing = FALSE)
 
   response <- all.vars(formula[[2]])
@@ -46,22 +43,22 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     attr(terms(formula), "term.labels")
 
 
-  baselearer.formula <-
+  baselearer.out <-
     lapply(baselearner,
            function(x){
              eval(parse(text = x))
            }
     )
-  names(baselearer.formula) <- baselearner
+  names(baselearer.out) <- baselearner
 
 
   baselearer.model.matrix <-
-    lapply(baselearer.formula,
+    lapply(baselearer.out,
            function(x){
              na.omit(
                model.matrix(
                  as.formula(
-                   paste(response, "~", x)
+                   paste(response, "~", x[["formula"]])
                  ),
                  data = data)
              )
@@ -71,12 +68,14 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   appearances <- vector("integer", length = mstop)
 
-  risk <- vector("numeric", length = length(baselearner))
-  names(risk) <- baselearner
+  bl.risk <- vector("numeric", length = length(baselearner))
+  names(bl.risk) <- baselearner
 
+  risk <- vector("numeric", length = mstop + 1)
 
   fit <- rep(quantile(y, offset), length(y))
 
+  risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
 
   ## HUHU eigene Funktion für boostrq.fit schreiben
   ## HUHU das hier vielleicht anpassen, dass wenn man mehr iterationen möchte nicht wieder von vorne beginnen muss
@@ -88,8 +87,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     qr.res <-
       lapply(baselearner,
              function(x) {
-               qreg <- rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = method)
-               risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
+               qreg <- rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
+               bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
 
                qreg
              }
@@ -108,22 +107,23 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       names(coefpath) <- baselearner
     }
 
-    if(sum(risk == min(risk)) > 1){
+    if(sum(bl.risk == min(bl.risk)) > 1){
       warning(paste("Warning: There is no unique best base learner in iteration", m))
     }
 
-    best.baselearner <- names(which.min(risk))
+    best.baselearner <- names(which.min(bl.risk))
 
     coefpath[[best.baselearner]][, m] <- qr.res[[best.baselearner]]$coef * nu
 
     if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], 10)) > 0)){
-      appearances[m] <- which.min(risk)
+      appearances[m] <- which.min(bl.risk)
     } else {
       appearances[m] <- 0
     }
 
     fit <- fit + qr.res[[best.baselearner]]$fitted.values * nu
 
+    risk[m + 1] <- quantile.risk(y = y, f = fit, tau = tau)
   }
 
   RETURN <- list(formula = formula,
@@ -141,7 +141,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   RETURN$resid <- function() y - fit
 
   RETURN$risk <- function() {
-    quantile.risk(y, fit, tau)
+    risk[mstop + 1]
   }
 
   RETURN$neg.gradients <- function() {
@@ -200,7 +200,59 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   }
 
-  # RETURN$predict <- function()
+  RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
+
+    assert_character(which, max.len = length(baselearner), null.ok = TRUE)
+    assert_subset(which, choices = baselearner)
+    assert_character(aggregate, len = 1)
+    assert_subset(aggregate, choices = c("sum", "none", "cumsum"))
+    assert_data_frame(newdata, min.rows = 1, ncols = length(data)
+                      #, col.names = names(data)
+    )
+
+    if(is.null(which)){
+      which <- baselearner
+    }
+
+    newdata.model.matrix <-
+      lapply(baselearer.out[which],
+             function(x){
+               na.omit(
+                 model.matrix(
+                   as.formula(
+                     paste(response, "~", x[["formula"]])
+                   ),
+                   model.frame(
+                     ~ .,
+                     data = newdata,
+                     na.action = "na.pass")
+                 )
+               )
+             }
+      )
+    names(newdata.model.matrix) <- which
+
+    if(aggregate == "sum"){
+      bl.predictions <-
+        lapply(which,
+               function(x){
+                 newdata.model.matrix[[x]] %*% RETURN$coef(which = which, aggregate = aggregate)[[x]]
+               }
+        )
+
+      predictions <- Reduce('+', bl.predictions) + quantile(y, offset)
+      return(predictions)
+    }
+
+    ### HUHU add "cumsum" and "none"
+    # if(aggregate == "cumsum")
+    # if(aggregate == "none")
+
+  }
+
+
+
+
   # RETURN$subset <- function()
 
   class(RETURN) <- "boostrq"
