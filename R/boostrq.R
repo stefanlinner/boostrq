@@ -134,14 +134,16 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   RETURN$mstop <- function() mstop
 
-  RETURN$xselect <- function() appearances
+  RETURN$xselect <- function() {
+    appearances[1:(mstop + 1)]
+  }
 
   RETURN$fitted <- function() fit
 
   RETURN$resid <- function() y - fit
 
   RETURN$risk <- function() {
-    risk[mstop + 1]
+    risk[1:(mstop + 1)]
   }
 
   RETURN$neg.gradients <- function() {
