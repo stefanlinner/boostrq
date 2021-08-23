@@ -16,7 +16,7 @@
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
   assert_class(object, "boostrq")
-  assert_character(aggregate, len = 1, any.missing = FALSE)
+  assert_string(aggregate)
   assert_subset(aggregate, choices = c("sum", "cumsum", "none"), empty.ok = FALSE)
 
   args <- list(...)
@@ -124,14 +124,6 @@ residuals.boostrq <- function(object, ...) {
 
 
 
-
-# "[.boostrq" <- function(x, i, return = TRUE, ...)
-# predict.boostrq <- function(object, newdata = NULL, ...)
-# summary.boostrq <- function(object, ...)
-# print.summary.boostrq <- function(x, ...)
-
-
-
 #' #' residuals of boosting regression quantiles
 #' #'
 #' #' @param object object of class boostrq
@@ -143,7 +135,7 @@ residuals.boostrq <- function(object, ...) {
 #' #' @import checkmate
 #' #'
 #' #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' #' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #' #' resid(model)
 #' resid.boostrq <- function(object, ...) {
 #'
@@ -157,6 +149,16 @@ residuals.boostrq <- function(object, ...) {
 #'   object$resid()
 #'
 #' }
+
+
+
+
+# "[.boostrq" <- function(x, i, return = TRUE, ...)
+# predict.boostrq <- function(object, newdata = NULL, ...)
+# summary.boostrq <- function(object, ...)
+# print.summary.boostrq <- function(x, ...)
+
+
 
 
 

@@ -23,26 +23,32 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   mstop <- as.integer(mstop)
 
+
+  ### Asserting input parameters
   assert_integer(mstop, lower = 1, len = 1)
   assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
   assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
   assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
   assert_data_frame(data, all.missing = FALSE)
 
+  ### Getting response variable name
   response <- all.vars(formula[[2]])
-  assert_character(response, len = 1)
+  assert_string(response)
 
   if(any(is.na(data))){
     warning("Data contains missing values. Missing values are removed for each baselearner seperately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
   }
 
+  ### Removing observations, where response value is NA
   data <- data[!is.na(data[, response]), ]
   y <- data[[response]]
 
+  ### Getting baselearner names
   baselearner <-
     attr(terms(formula), "term.labels")
 
 
+  ### Evaluating baselearner functions (brq() and brqss())
   baselearer.out <-
     lapply(baselearner,
            function(x){
@@ -52,6 +58,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   names(baselearer.out) <- baselearner
 
 
+  ### Getting baselearner model matrices
   baselearer.model.matrix <-
     lapply(baselearer.out,
            function(x){
@@ -66,90 +73,129 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     )
   names(baselearer.model.matrix) <- baselearner
 
+  ### Setting up empty coefficient path matrix
+  coefpath <-
+    lapply(baselearner,
+           function(x){
+             coefpath.mat <- matrix(data = 0, nrow = mstop, ncol = ncol(baselearer.model.matrix[[x]]))
+             colnames(coefpath.mat) <-  colnames(baselearer.model.matrix[[x]])
+             coefpath.mat
+           }
+    )
+  names(coefpath) <- baselearner
+
+
+  ### Setting up empty appearances vector
   appearances <- vector("integer", length = mstop)
 
+  ### Setting up empty bl.risk vector
   bl.risk <- vector("numeric", length = length(baselearner))
   names(bl.risk) <- baselearner
 
+  ### Setting up empty empirical risk vector
   risk <- vector("numeric", length = mstop + 1)
 
+  ### Defining intial fitted values
   fit <- rep(quantile(y, offset), length(y))
+
 
   risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
 
-  ## HUHU eigene Funktion für boostrq.fit schreiben
-  ## HUHU das hier vielleicht anpassen, dass wenn man mehr iterationen möchte nicht wieder von vorne beginnen muss
-  ## Siehe auch subset Funktion
-  for(m in seq_len(mstop)) {
 
-    q.ngradient <- quantile.ngradient(y = y, f = fit, tau = tau)
+  ### Setting up counter variable
+  count.m <- 0
 
-    qr.res <-
-      lapply(baselearner,
-             function(x) {
-               qreg <- rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
-               bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
 
-               qreg
-             }
-      )
-    names(qr.res) <- baselearner
+  ### Setting up fitting function for boosting
+  boostrq.fit <- function(niter){
+    for(m in (count.m + 1):(count.m + niter)) {
 
-    if(m == 1){
-      coefpath <-
+      ### Determining current working residuals (negative gradients)
+      q.ngradient <- quantile.ngradient(y = y, f = fit, tau = tau)
+
+      ### Estimating quantile regression models and determining empirical quantile risk for each baselearner
+      qr.res <-
         lapply(baselearner,
-               function(x){
-                 coefpath.mat <- matrix(data = 0, ncol = mstop, nrow = length(qr.res[[x]]$coef))
-                 rownames(coefpath.mat) <-  names(qr.res[[x]]$coef)
-                 coefpath.mat
+               function(x) {
+                 qreg <- rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
+                 bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
+
+                 qreg
                }
         )
-      names(coefpath) <- baselearner
+      names(qr.res) <- baselearner
+
+
+      if(sum(bl.risk == min(bl.risk)) > 1){
+        warning(paste("Warning: There is no unique best base learner in iteration", m))
+      }
+
+      ### Determining best fitting baselearner of current iteration
+      best.baselearner <- names(which.min(bl.risk))
+
+      ### Updating coefficient path
+      ### HUHU: WAS IST HIER DAS PROBLEM???!!!
+      coefpath[[best.baselearner]][m, ] <<- qr.res[[best.baselearner]]$coef * nu
+
+
+      ### Determining the best fitting component
+      ### HUHU: Denk nochmal über die Genze 10te Nachkommastelle nach...
+      if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], 10)) > 0)){
+        appearances[m] <<- which.min(bl.risk)
+      } else {
+        appearances[m] <<- 0
+      }
+
+      ### Updating  fitted values
+      fit <<- fit + qr.res[[best.baselearner]]$fitted.values * nu
+
+      ### Updating empirical quantile risk
+      risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
     }
 
-    if(sum(bl.risk == min(bl.risk)) > 1){
-      warning(paste("Warning: There is no unique best base learner in iteration", m))
-    }
-
-    best.baselearner <- names(which.min(bl.risk))
-
-    coefpath[[best.baselearner]][, m] <- qr.res[[best.baselearner]]$coef * nu
-
-    if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], 10)) > 0)){
-      appearances[m] <- which.min(bl.risk)
-    } else {
-      appearances[m] <- 0
-    }
-
-    fit <- fit + qr.res[[best.baselearner]]$fitted.values * nu
-
-    risk[m + 1] <- quantile.risk(y = y, f = fit, tau = tau)
+    ### Increasing iteration counter to current number of iterations (mstop)
+    count.m <<- count.m + niter
   }
 
+  ### Executing boostrq.fit
+  if(mstop > 0) {
+    boostrq.fit(mstop)
+  }
+
+
+  ### Defining rich output
   RETURN <- list(formula = formula,
                  nu = nu,
                  offset = quantile(y, offset),
                  baselearner.names = baselearner,
                  call = match.call())
 
-  RETURN$mstop <- function() mstop
+  ### Number of iterations run
+  RETURN$mstop <- function() count.m
 
+  ### Selected component in each iteration
   RETURN$xselect <- function() {
-    appearances[1:(mstop + 1)]
+    appearances[1:count.m]
   }
 
+  ### Current fitted values
   RETURN$fitted <- function() fit
 
+  ### Current residuals
   RETURN$resid <- function() y - fit
 
+  ### Current empirical quantile risk
   RETURN$risk <- function() {
-    risk[1:(mstop + 1)]
+    risk[1:(count.m + 1)]
   }
 
+  ### Current working residuals (negative gradients)
   RETURN$neg.gradients <- function() {
     quantile.ngradient(y, fit, tau)
   }
 
+
+  ### Underlying baselearner model matrices
   RETURN$baselearner.matrix <- function(which = NULL) {
 
     assert_character(which, max.len = length(baselearner), null.ok = TRUE)
@@ -161,6 +207,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     baselearer.model.matrix[which]
   }
 
+  ### Current coefficient estimates
   RETURN$coef <- function(which = NULL, aggregate = "sum") {
 
     assert_character(which, max.len = length(baselearner), null.ok = TRUE)
@@ -174,16 +221,20 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     }
 
     if(aggregate == "none"){
-      coefpath.none <- coefpath[which]
+      coefpath.none <- lapply(which,
+                              function(x){
+                                coefpath[[x]][1:count.m, ]
+                              }
+      )
       names(coefpath.none) <- which
       coefpath.none$offset <- quantile(y, offset)
       return(coefpath.none)
     }
 
     if(aggregate == "sum"){
-      coefpath.sum <- lapply(coefpath[which],
+      coefpath.sum <- lapply(which,
                              function(x){
-                               rowSums(x)
+                               colSums(coefpath[[x]][1:count.m, ])
                              })
       names(coefpath.sum) <- which
       coefpath.sum$offset <- quantile(y, offset)
@@ -191,9 +242,9 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     }
 
     if(aggregate == "cumsum"){
-      coefpath.cumsum <- lapply(coefpath[which],
+      coefpath.cumsum <- lapply(which,
                                 function(x){
-                                  apply(x, MARGIN = 1, FUN = cumsum)
+                                  apply(coefpath[[x]][1:count.m, ], MARGIN = 2, FUN = cumsum)
                                 })
       names(coefpath.cumsum) <- which
       coefpath.cumsum$offset <- quantile(y, offset)
@@ -202,6 +253,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   }
 
+  ### Predicition function
   RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
     assert_character(which, max.len = length(baselearner), null.ok = TRUE)
@@ -253,9 +305,36 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   }
 
 
+  ### Update to a new number of boosting iterations mstop (without refitting the whole model)
+  RETURN$subset <- function(i) {
+    i <- as.integer(i)
+    assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
 
+    if(i <= count.m) {
+      if(i < count.m){
+        count.m <<- i
+        fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
+      }
+    } else {
+      ### if prior reduction of count.m, first increase count.m to old value
+      if(count.m != length(appearances)) {
+        count.m <<- length(appearances)
+        fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
+      }
 
-  # RETURN$subset <- function()
+      ### HUHU: DAS FUNKTIONIERT NICHT WARUM AUCH IMMER
+
+      coefpath <<-
+        lapply(baselearner,
+               function(x){
+                 rbind(coefpath[[x]], matrix(0, nrow = i - count.m, ncol = ncol(coefpath[[x]])))
+               }
+        )
+      names(coefpath) <- baselearner
+      boostrq.fit(i - count.m)
+    }
+
+  }
 
   class(RETURN) <- "boostrq"
 
