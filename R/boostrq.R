@@ -125,7 +125,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
         )
       names(qr.res) <- baselearner
 
-
       if(sum(bl.risk == min(bl.risk)) > 1){
         warning(paste("Warning: There is no unique best base learner in iteration", m))
       }
@@ -134,9 +133,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       best.baselearner <- names(which.min(bl.risk))
 
       ### Updating coefficient path
-      ### HUHU: WAS IST HIER DAS PROBLEM???!!!
       coefpath[[best.baselearner]][m, ] <<- qr.res[[best.baselearner]]$coef * nu
-
 
       ### Determining the best fitting component
       ### HUHU: Denk nochmal über die Genze 10te Nachkommastelle nach...
@@ -213,7 +210,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     assert_character(which, max.len = length(baselearner), null.ok = TRUE)
     assert_subset(which, choices = baselearner)
     assert_character(aggregate, len = 1)
-    assert_subset(aggregate, choices = c("sum", "none", "cumsum"))
+    assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
 
 
     if(is.null(which)){
@@ -259,7 +256,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     assert_character(which, max.len = length(baselearner), null.ok = TRUE)
     assert_subset(which, choices = baselearner)
     assert_character(aggregate, len = 1)
-    assert_subset(aggregate, choices = c("sum", "none", "cumsum"))
+    assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
     assert_data_frame(newdata, min.rows = 1, ncols = length(data)
                       #, col.names = names(data)
     )
@@ -310,8 +307,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     i <- as.integer(i)
     assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
 
-    if(i <= count.m) {
-      if(i < count.m){
+    if(i <= count.m || i <= length(appearances)) {
+      if(i != count.m){
         count.m <<- i
         fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
       }
@@ -321,16 +318,13 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
         count.m <<- length(appearances)
         fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
       }
-
-      ### HUHU: DAS FUNKTIONIERT NICHT WARUM AUCH IMMER
-
       coefpath <<-
         lapply(baselearner,
                function(x){
                  rbind(coefpath[[x]], matrix(0, nrow = i - count.m, ncol = ncol(coefpath[[x]])))
                }
         )
-      names(coefpath) <- baselearner
+      names(coefpath) <<- baselearner
       boostrq.fit(i - count.m)
     }
 
