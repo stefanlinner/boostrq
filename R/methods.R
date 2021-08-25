@@ -123,6 +123,133 @@ residuals.boostrq <- function(object, ...) {
 }
 
 
+#' Updating number of iterations
+#'
+#' @param x a boostrq object
+#' @param i desired number of boosting iterations
+#' @param return TRUE, if the result should be returned
+#' @param ... additional arguments passed to callies
+#'
+#' @return a boostrq object with the updated number of iterations
+#' @export
+#'
+#' @import checkmate
+#'
+#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' model[500]
+#'
+"[.boostrq" <- function(x, i, return = TRUE, ...) {
+
+  i <- as.integer(i)
+  assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
+  assert_class(x, "boostrq")
+  assert_logical(return, any.missing = FALSE, len = 1)
+
+  x$subset(i)
+
+  if(return) return(x)
+  invisible(NULL)
+}
+
+
+#' s3 method class for 'boostrq'
+#'
+#' @param object a boostrq object
+#' @param ... additional arguments passed to callies
+#'
+#' @return current number of boosting iterations
+#' @export
+#'
+#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' mstop(model)
+mstop <- function(object, ...) {
+  UseMethod("mstop")
+}
+
+
+#' Current number of iterations of boostrq
+#'
+#' @param object a boostrq object
+#' @param ... additional arguments passed to callies
+#'
+#' @return current number of boosting iterations
+#' @export
+#'
+#' @import checkmate
+#'
+#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' mstop(model)
+mstop.boostrq <- function(object, ...) {
+
+  assert_class(object, "boostrq")
+
+  object$mstop()
+
+}
+
+
+#' Updating number of iterations
+#'
+#' @param x a boostrq object
+#' @param value desired number of boosting iterations
+#'
+#' @return a boostrq object with the updated number of iterations
+#' @export
+#'
+#' @import checkmate
+#'
+#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' mstop(model) <- 500
+"mstop<-" <- function(x, value) {
+
+  value <- as.integer(value)
+  assert_integer(value, lower = 1, any.missing = FALSE, len = 1)
+  assert_class(x, "boostrq")
+
+  return(x[value, return = TRUE])
+
+}
+
+
+#' Model predictions for boosting regression quantiles
+#'
+#' @param object a boostrq object
+#' @param newdata a data.frame with the same columns as the training data (including also the dependent variable with NA values)
+#' @param which a subset of base-learners
+#' @param aggregate a character specifying how to aggregate coefficients of single base learners. The default returns the coefficient for the final number of boosting iterations. "cumsum" returns a list with matrices (one per base-learner) with the cumulative coefficients for all iterations. "none" returns a list of matrices where the jth columns of the respective matrix contains coefficients of the base-learner of the jth boosting iteration.
+#' @param ... additional arguments passed to callies
+#'
+#' @return predictions for the new data
+#' @export
+#'
+#' @import checkmate
+#'
+#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
+#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1)
+#' predict(model, newdata = predict.data)
+predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "sum", ...) {
+
+  assert_class(object, "boostrq")
+  assert_character(aggregate, len = 1)
+  ## HUHU: Überprüfe diese checks auf den data.frame, ist das wirklich was ich will?
+  assert_data_frame(newdata, min.rows = 1
+                    # , ncols = length(data), col.names = names(data)
+  )
+  assert_character(which, max.len = length(object$baselearner.names), null.ok = TRUE)
+  assert_subset(which, choices = object$baselearner.names)
+  assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
+
+  object$predict(newdata, which, aggregate)
+
+}
+
+
+
 
 #' #' residuals of boosting regression quantiles
 #' #'
@@ -151,10 +278,6 @@ residuals.boostrq <- function(object, ...) {
 #' }
 
 
-
-
-# "[.boostrq" <- function(x, i, return = TRUE, ...)
-# predict.boostrq <- function(object, newdata = NULL, ...)
 # summary.boostrq <- function(object, ...)
 # print.summary.boostrq <- function(x, ...)
 

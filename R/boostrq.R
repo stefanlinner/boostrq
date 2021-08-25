@@ -257,8 +257,9 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     assert_subset(which, choices = baselearner)
     assert_character(aggregate, len = 1)
     assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
-    assert_data_frame(newdata, min.rows = 1, ncols = length(data)
-                      #, col.names = names(data)
+    ## HUHU: Überprüfe diese checks auf den data.frame, ist das wirklich was ich will?
+    assert_data_frame(newdata, min.rows = 1
+                      # , ncols = length(data), col.names = names(data)
     )
 
     if(is.null(which)){
@@ -328,6 +329,14 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       boostrq.fit(i - count.m)
     }
 
+  }
+
+
+  RETURN$selection.freqs <- function() {
+    freq.table <- table(RETURN$xselect()) / length(RETURN$xselect())
+    ind <- as.numeric(names(freq.table)) + 1
+    names(freq.table) <- c("Intercept", baselearner)[ind]
+    freq.table
   }
 
   class(RETURN) <- "boostrq"
