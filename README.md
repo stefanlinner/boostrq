@@ -4,6 +4,9 @@
 # boostrq
 
 <!-- badges: start -->
+
+[![Travis build
+status](https://travis-ci.com/stefanlinner/boostrq.svg?branch=master)](https://travis-ci.com/stefanlinner/boostrq)
 <!-- badges: end -->
 
 Package for boosting regression quantiles (Bauer, Haupt, & Linner, 2021)
@@ -26,13 +29,13 @@ This is a basic example which shows you how to use the boostrq function:
 library(boostrq)
 ## basic example code
 boosted.rq <- 
-  boostrq(formula = mpg ~ brq(hp:cyl, cyl * hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+  boostrq(formula = mpg ~ brq(hp:cyl, cyl * hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 
 boosted.rq
 #> 
 #>   Boosting Regression Qauntiles
 #> 
-#> Call:  boostrq(formula = mpg ~ brq(hp:cyl, cyl * hp) + brq(am), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5, method = "fn")
+#> Call:  boostrq(formula = mpg ~ brq(hp:cyl, cyl * hp) + brq(am), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #> formula: mpg ~ brq(hp:cyl, cyl * hp) + brq(am)
 #> 
 #> 

@@ -13,8 +13,8 @@
 #'
 #' @examples brq(hp:cyl, cyl*hp, method = "fn")
 brq <- function(..., method = "fn") {
-  assert_character(method, len = 1, any.missing = FALSE)
-  assert_subset(method,
+  checkmate::assert_character(method, len = 1, any.missing = FALSE)
+  checkmate::assert_subset(method,
                 choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
 
 
@@ -44,11 +44,11 @@ brq <- function(..., method = "fn") {
     })
   }
 
-  assert_vector(bl,
+  checkmate::assert_vector(bl,
                 strict = TRUE,
                 any.missing = FALSE,
                 all.missing = FALSE)
-  assert_character(bl, null.ok = FALSE)
+  checkmate::assert_character(bl, null.ok = FALSE)
 
   list(
     baselearner = "brq",

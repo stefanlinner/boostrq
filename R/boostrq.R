@@ -25,15 +25,15 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
 
   ### Asserting input parameters
-  assert_integer(mstop, lower = 1, len = 1)
-  assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
-  assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
-  assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
-  assert_data_frame(data, all.missing = FALSE)
+  checkmate::assert_integer(mstop, lower = 1, len = 1)
+  checkmate::assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
+  checkmate::assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
+  checkmate::assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
+  checkmate::assert_data_frame(data, all.missing = FALSE)
 
   ### Getting response variable name
   response <- all.vars(formula[[2]])
-  assert_string(response)
+  checkmate::assert_string(response)
 
   if(any(is.na(data))){
     warning("Data contains missing values. Missing values are removed for each baselearner seperately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
@@ -45,7 +45,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   ### Getting baselearner names
   baselearner <-
-    attr(terms(formula), "term.labels")
+    attr(stats::terms(formula), "term.labels")
 
 
   ### Evaluating baselearner functions (brq() and brqss())
@@ -62,9 +62,9 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   baselearer.model.matrix <-
     lapply(baselearer.out,
            function(x){
-             na.omit(
-               model.matrix(
-                 as.formula(
+             stats::na.omit(
+               stats::model.matrix(
+                 stats::as.formula(
                    paste(response, "~", x[["formula"]])
                  ),
                  data = data)
@@ -96,7 +96,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   risk <- vector("numeric", length = mstop + 1)
 
   ### Defining intial fitted values
-  fit <- rep(quantile(y, offset), length(y))
+  fit <- rep(stats::quantile(y, offset), length(y))
 
 
   risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
@@ -117,7 +117,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       qr.res <-
         lapply(baselearner,
                function(x) {
-                 qreg <- rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
+                 qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
                  bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
 
                  qreg
@@ -163,7 +163,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Defining rich output
   RETURN <- list(formula = formula,
                  nu = nu,
-                 offset = quantile(y, offset),
+                 offset = stats::quantile(y, offset),
                  baselearner.names = baselearner,
                  call = match.call())
 
@@ -195,8 +195,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Underlying baselearner model matrices
   RETURN$baselearner.matrix <- function(which = NULL) {
 
-    assert_character(which, max.len = length(baselearner), null.ok = TRUE)
-    assert_subset(which, choices = baselearner)
+    checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
+    checkmate::assert_subset(which, choices = baselearner)
 
     if(is.null(which)){
       which <- baselearner
@@ -207,10 +207,10 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Current coefficient estimates
   RETURN$coef <- function(which = NULL, aggregate = "sum") {
 
-    assert_character(which, max.len = length(baselearner), null.ok = TRUE)
-    assert_subset(which, choices = baselearner)
-    assert_character(aggregate, len = 1)
-    assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
+    checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
+    checkmate::assert_subset(which, choices = baselearner)
+    checkmate::assert_character(aggregate, len = 1)
+    checkmate::assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
 
 
     if(is.null(which)){
@@ -224,7 +224,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                               }
       )
       names(coefpath.none) <- which
-      coefpath.none$offset <- quantile(y, offset)
+      coefpath.none$offset <- stats::quantile(y, offset)
       return(coefpath.none)
     }
 
@@ -234,7 +234,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                                colSums(coefpath[[x]][1:count.m, ])
                              })
       names(coefpath.sum) <- which
-      coefpath.sum$offset <- quantile(y, offset)
+      coefpath.sum$offset <- stats::quantile(y, offset)
       return(coefpath.sum)
     }
 
@@ -244,7 +244,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                                   apply(coefpath[[x]][1:count.m, ], MARGIN = 2, FUN = cumsum)
                                 })
       names(coefpath.cumsum) <- which
-      coefpath.cumsum$offset <- quantile(y, offset)
+      coefpath.cumsum$offset <- stats::quantile(y, offset)
       return(coefpath.cumsum)
     }
 
@@ -253,13 +253,13 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Predicition function
   RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
-    assert_character(which, max.len = length(baselearner), null.ok = TRUE)
-    assert_subset(which, choices = baselearner)
-    assert_character(aggregate, len = 1)
-    assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
+    checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
+    checkmate::assert_subset(which, choices = baselearner)
+    checkmate::assert_character(aggregate, len = 1)
+    checkmate::assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
     ## HUHU: Überprüfe diese checks auf den data.frame, ist das wirklich was ich will?
-    assert_data_frame(newdata, min.rows = 1
-                      # , ncols = length(data), col.names = names(data)
+    checkmate::assert_data_frame(newdata, min.rows = 1
+                                 # , ncols = length(data), col.names = names(data)
     )
 
     if(is.null(which)){
@@ -269,12 +269,12 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     newdata.model.matrix <-
       lapply(baselearer.out[which],
              function(x){
-               na.omit(
-                 model.matrix(
-                   as.formula(
+               stats::na.omit(
+                 stats::model.matrix(
+                   stats::as.formula(
                      paste(response, "~", x[["formula"]])
                    ),
-                   model.frame(
+                   stats::model.frame(
                      ~ .,
                      data = newdata,
                      na.action = "na.pass")
@@ -292,7 +292,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                }
         )
 
-      predictions <- Reduce('+', bl.predictions) + quantile(y, offset)
+      predictions <- Reduce('+', bl.predictions) + stats::quantile(y, offset)
       return(predictions)
     }
 
@@ -306,7 +306,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Update to a new number of boosting iterations mstop (without refitting the whole model)
   RETURN$subset <- function(i) {
     i <- as.integer(i)
-    assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
+    checkmate::assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
 
     if(i <= count.m || i <= length(appearances)) {
       if(i != count.m){

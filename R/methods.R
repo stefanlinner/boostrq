@@ -15,9 +15,9 @@
 #' coef(model, aggregate = "cumsum")
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
-  assert_class(object, "boostrq")
-  assert_string(aggregate)
-  assert_choice(aggregate, choices = c("sum", "cumsum", "none"))
+  checkmate::assert_class(object, "boostrq")
+  checkmate::assert_string(aggregate)
+  checkmate::assert_choice(aggregate, choices = c("sum", "cumsum", "none"))
 
   args <- list(...)
   if (length(args) > 0) {
@@ -43,7 +43,7 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 #' fitted(model)
 fitted.boostrq <- function(object, ...) {
 
-  assert_class(object, "boostrq")
+  checkmate::assert_class(object, "boostrq")
 
   args <- list(...)
   if (length(args) > 0) {
@@ -70,7 +70,7 @@ fitted.boostrq <- function(object, ...) {
 #' model
 print.boostrq <- function(x, ...){
 
-  assert_class(x, "boostrq")
+  checkmate::assert_class(x, "boostrq")
 
   cat("\n")
   cat("\t Boosting Regression Qauntiles\n")
@@ -111,7 +111,7 @@ print.boostrq <- function(x, ...){
 #' residuals(model)
 residuals.boostrq <- function(object, ...) {
 
-  assert_class(object, "boostrq")
+  checkmate::assert_class(object, "boostrq")
 
   args <- list(...)
   if (length(args) > 0) {
@@ -142,9 +142,9 @@ residuals.boostrq <- function(object, ...) {
 "[.boostrq" <- function(x, i, return = TRUE, ...) {
 
   i <- as.integer(i)
-  assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
-  assert_class(x, "boostrq")
-  assert_logical(return, any.missing = FALSE, len = 1)
+  checkmate::assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
+  checkmate::assert_class(x, "boostrq")
+  checkmate::assert_logical(return, any.missing = FALSE, len = 1)
 
   x$subset(i)
 
@@ -184,7 +184,7 @@ mstop <- function(object, ...) {
 #' mstop(model)
 mstop.boostrq <- function(object, ...) {
 
-  assert_class(object, "boostrq")
+  checkmate::assert_class(object, "boostrq")
 
   object$mstop()
 
@@ -207,8 +207,8 @@ mstop.boostrq <- function(object, ...) {
 "mstop<-" <- function(x, value) {
 
   value <- as.integer(value)
-  assert_integer(value, lower = 1, any.missing = FALSE, len = 1)
-  assert_class(x, "boostrq")
+  checkmate::assert_integer(value, lower = 1, any.missing = FALSE, len = 1)
+  checkmate::assert_class(x, "boostrq")
 
   return(x[value, return = TRUE])
 
@@ -234,15 +234,15 @@ mstop.boostrq <- function(object, ...) {
 #' predict(model, newdata = predict.data)
 predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "sum", ...) {
 
-  assert_class(object, "boostrq")
-  assert_character(aggregate, len = 1)
+  checkmate::assert_class(object, "boostrq")
+  checkmate::assert_character(aggregate, len = 1)
   ## HUHU: Überprüfe diese checks auf den data.frame, ist das wirklich was ich will?
-  assert_data_frame(newdata, min.rows = 1
+  checkmate::assert_data_frame(newdata, min.rows = 1
                     # , ncols = length(data), col.names = names(data)
   )
-  assert_character(which, max.len = length(object$baselearner.names), null.ok = TRUE)
-  assert_subset(which, choices = object$baselearner.names)
-  assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
+  checkmate::assert_character(which, max.len = length(object$baselearner.names), null.ok = TRUE)
+  checkmate::assert_subset(which, choices = object$baselearner.names)
+  checkmate::assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
 
   object$predict(newdata, which, aggregate)
 
@@ -266,7 +266,7 @@ predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "s
 #' #' resid(model)
 #' resid.boostrq <- function(object, ...) {
 #'
-#'   assert_class(object, "boostrq")
+#'   checkmate::assert_class(object, "boostrq")
 #'
 #'   args <- list(...)
 #'   if (length(args) > 0) {
