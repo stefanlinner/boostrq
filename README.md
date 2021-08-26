@@ -7,6 +7,7 @@
 
 [![Travis build
 status](https://travis-ci.com/stefanlinner/boostrq.svg?branch=master)](https://travis-ci.com/stefanlinner/boostrq)
+[![R-CMD-check](https://github.com/stefanlinner/boostrq/workflows/R-CMD-check/badge.svg)](https://github.com/stefanlinner/boostrq/actions)
 <!-- badges: end -->
 
 Package for boosting regression quantiles (Bauer, Haupt, & Linner, 2021)
