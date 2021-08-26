@@ -105,7 +105,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Setting up counter variable
   count.m <- 0
 
-
   ### Setting up fitting function for boosting
   boostrq.fit <- function(niter){
     for(m in (count.m + 1):(count.m + niter)) {
