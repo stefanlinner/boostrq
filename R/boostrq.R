@@ -21,6 +21,7 @@
 #'
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5) {
 
+
   mstop <- as.integer(mstop)
 
 
@@ -34,6 +35,10 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Getting response variable name
   response <- all.vars(formula[[2]])
   checkmate::assert_string(response)
+
+  ## Getting covariate names
+  covariates <- all.vars(formula[[3]])
+  checkmate::assert_character(covariates, all.missing = FALSE)
 
   if(any(is.na(data))){
     warning("Data contains missing values. Missing values are removed for each baselearner seperately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
@@ -252,14 +257,12 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Predicition function
   RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
+    checkmate::assert_data_frame(newdata, min.rows = 1, col.names = "named")
+    checkmate::assert_subset(c(response, covariates), choices = names(newdata), empty.ok = FALSE)
     checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
     checkmate::assert_subset(which, choices = baselearner)
     checkmate::assert_character(aggregate, len = 1)
     checkmate::assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
-    ## HUHU: Überprüfe diese checks auf den data.frame, ist das wirklich was ich will?
-    checkmate::assert_data_frame(newdata, min.rows = 1
-                                 # , ncols = length(data), col.names = names(data)
-    )
 
     if(is.null(which)){
       which <- baselearner
@@ -304,6 +307,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   ### Update to a new number of boosting iterations mstop (without refitting the whole model)
   RETURN$subset <- function(i) {
+
     i <- as.integer(i)
     checkmate::assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
 
