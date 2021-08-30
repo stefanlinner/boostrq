@@ -21,9 +21,7 @@
 #'
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5) {
 
-
   mstop <- as.integer(mstop)
-
 
   ### Asserting input parameters
   checkmate::assert_integer(mstop, lower = 1, len = 1)
@@ -40,6 +38,10 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   covariates <- all.vars(formula[[3]])
   checkmate::assert_character(covariates, all.missing = FALSE)
 
+  ### Getting baselearner names
+  baselearner <- attr(stats::terms(formula), "term.labels")
+  checkmate::assert_character(baselearner, any.missing = FALSE, pattern = "^(brq\\(|brqss\\().+\\)$")
+
   if(any(is.na(data))){
     warning("Data contains missing values. Missing values are removed for each baselearner seperately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
   }
@@ -47,11 +49,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Removing observations, where response value is NA
   data <- data[!is.na(data[, response]), ]
   y <- data[[response]]
-
-  ### Getting baselearner names
-  baselearner <-
-    attr(stats::terms(formula), "term.labels")
-
 
   ### Evaluating baselearner functions (brq() and brqss())
   baselearer.out <-
@@ -61,7 +58,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
            }
     )
   names(baselearer.out) <- baselearner
-
 
   ### Getting baselearner model matrices
   baselearer.model.matrix <-
@@ -89,7 +85,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     )
   names(coefpath) <- baselearner
 
-
   ### Setting up empty appearances vector
   appearances <- vector("integer", length = mstop)
 
@@ -103,9 +98,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Defining intial fitted values
   fit <- rep(stats::quantile(y, offset), length(y))
 
-
   risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
-
 
   ### Setting up counter variable
   count.m <- 0
@@ -152,10 +145,12 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
       ### Updating empirical quantile risk
       risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
+
     }
 
     ### Increasing iteration counter to current number of iterations (mstop)
     count.m <<- count.m + niter
+
   }
 
   ### Executing boostrq.fit
@@ -163,13 +158,14 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     boostrq.fit(mstop)
   }
 
-
   ### Defining rich output
-  RETURN <- list(formula = formula,
-                 nu = nu,
-                 offset = stats::quantile(y, offset),
-                 baselearner.names = baselearner,
-                 call = match.call())
+  RETURN <- list(
+    formula = formula,
+    nu = nu,
+    offset = stats::quantile(y, offset),
+    baselearner.names = baselearner,
+    call = match.call()
+  )
 
   ### Number of iterations run
   RETURN$mstop <- function() count.m
@@ -195,7 +191,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     quantile.ngradient(y, fit, tau)
   }
 
-
   ### Underlying baselearner model matrices
   RETURN$baselearner.matrix <- function(which = NULL) {
 
@@ -206,6 +201,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       which <- baselearner
     }
     baselearer.model.matrix[which]
+
   }
 
   ### Current coefficient estimates
@@ -215,7 +211,6 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     checkmate::assert_subset(which, choices = baselearner)
     checkmate::assert_character(aggregate, len = 1)
     checkmate::assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
-
 
     if(is.null(which)){
       which <- baselearner
@@ -236,7 +231,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       coefpath.sum <- lapply(which,
                              function(x){
                                colSums(coefpath[[x]][1:count.m, ])
-                             })
+                             }
+      )
       names(coefpath.sum) <- which
       coefpath.sum$offset <- stats::quantile(y, offset)
       return(coefpath.sum)
@@ -246,7 +242,8 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       coefpath.cumsum <- lapply(which,
                                 function(x){
                                   apply(coefpath[[x]][1:count.m, ], MARGIN = 2, FUN = cumsum)
-                                })
+                                }
+      )
       names(coefpath.cumsum) <- which
       coefpath.cumsum$offset <- stats::quantile(y, offset)
       return(coefpath.cumsum)
@@ -293,22 +290,48 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                  newdata.model.matrix[[x]] %*% RETURN$coef(which = which, aggregate = aggregate)[[x]]
                }
         )
-
       predictions <- Reduce('+', bl.predictions) + stats::quantile(y, offset)
       return(predictions)
     }
 
-    ### HUHU add "cumsum" and "none"
-    # if(aggregate == "cumsum")
-    # if(aggregate == "none")
+    if(aggregate == "cumsum") {
+      bl.predictions <-
+        lapply(which,
+               function(x){
+                 apply(X = RETURN$coef(which = which, aggregate = aggregate)[[x]], MARGIN = 1,
+                       FUN = function(X){
+                         newdata.model.matrix[[x]] %*% X
+                       }
+                 )
+               }
+        )
+      predictions.cum <- Reduce('+', bl.predictions) + stats::quantile(y, offset)
+      return(predictions.cum)
+    }
+
+    if(aggregate == "none") {
+      bl.predictions <-
+        lapply(which,
+               function(x){
+                 apply(X = RETURN$coef(which = which, aggregate = aggregate)[[x]], MARGIN = 1,
+                       FUN = function(X){
+                         newdata.model.matrix[[x]] %*% X
+                       }
+                 )
+               }
+        )
+      predictions.none <- Reduce('+', bl.predictions)
+      predictions.none[, 1] <- predictions.none[, 1] + stats::quantile(y, offset)
+      return(predictions.none)
+    }
 
   }
-
 
   ### Update to a new number of boosting iterations mstop (without refitting the whole model)
   RETURN$subset <- function(i) {
 
     i <- as.integer(i)
+
     checkmate::assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
 
     if(i <= count.m || i <= length(appearances)) {
@@ -334,7 +357,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   }
 
-
+  ### Table with selection frequency for each baselearner
   RETURN$selection.freqs <- function() {
     freq.table <- table(RETURN$xselect()) / length(RETURN$xselect())
     ind <- as.numeric(names(freq.table)) + 1

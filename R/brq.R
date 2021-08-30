@@ -13,41 +13,52 @@
 #'
 #' @examples brq(hp:cyl, cyl*hp, method = "fn")
 brq <- function(..., method = "fn") {
-  checkmate::assert_character(method, len = 1, any.missing = FALSE)
-  checkmate::assert_subset(method,
-                choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
 
+  ### Asserting input parameters
+  checkmate::assert_string(method)
+  checkmate::assert_subset(method, choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
 
+  ### Extracting all variables contained in baselearner
   bl <- as.list(match.call(expand.dots = FALSE))[2][[1]]
+  bl <-
+    sapply(bl,
+           function(x) {
+             as.character(x)
+           }
+    )
 
-  bl <- sapply(bl,
-               function(x) {
-                 as.character(x)
-               })
-
-
-  ## HUHU ist das stabil?
+  ### Checking and adapting format of extracted variables
+  ### HUHU ist das stabil?
   if (is.list(bl)) {
-    bl.length <- sapply(bl, function(x) {
-      length(x)
-    })
+    bl.length <-
+      sapply(bl,
+             function(x) {
+               length(x)
+             }
+      )
     bl.multiple <- which(bl.length > 1)
-    bl.single <- sapply(bl.multiple, function(x) {
-      paste(bl[[x]][2], bl[[x]][1], bl[[x]][3], sep = "")
-    })
+
+    bl.single <-
+      sapply(bl.multiple,
+             function(x) {
+               paste(bl[[x]][2], bl[[x]][1], bl[[x]][3], sep = "")
+             }
+      )
     bl <- c(unlist(bl[-bl.multiple]), bl.single)
   }
 
+  ### Checking and adapting format of extracted variables
   if (is.matrix(bl)) {
-    bl <- apply(bl, MARGIN = 2, function(x) {
-      paste(x[2], x[1], x[3], sep = "")
-    })
+    bl <-
+      apply(bl, MARGIN = 2,
+            function(x) {
+              paste(x[2], x[1], x[3], sep = "")
+            }
+      )
   }
 
-  checkmate::assert_vector(bl,
-                strict = TRUE,
-                any.missing = FALSE,
-                all.missing = FALSE)
+  ### Assertions on output of formatting process
+  checkmate::assert_vector(bl, strict = TRUE, any.missing = FALSE)
   checkmate::assert_character(bl, null.ok = FALSE)
 
   list(

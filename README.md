@@ -10,7 +10,12 @@ status](https://travis-ci.com/stefanlinner/boostrq.svg?branch=master)](https://t
 [![R-CMD-check](https://github.com/stefanlinner/boostrq/workflows/R-CMD-check/badge.svg)](https://github.com/stefanlinner/boostrq/actions)
 <!-- badges: end -->
 
-Package for boosting regression quantiles (Bauer, Haupt, & Linner, 2021)
+Package for boosting regression quantiles (Bauer, Haupt, & Linner,
+2021). The functionality as well as the implementation was heavily
+inspired by the great package for model-based boosting
+[mboost](https://github.com/boost-R). Until now, only the linear
+baselearner (brq) is implemented, the nonlinear baselearner (brqss) will
+follow soon.
 
 ## Installation
 
@@ -24,20 +29,56 @@ devtools::install_github("stefanlinner/boostrq")
 
 ## Example
 
-This is a basic example which shows you how to use the boostrq function:
+The following demonstrates the basic functionality of the package with a
+simple example.
 
 ``` r
+### Attaching the package to the search path
 library(boostrq)
-## basic example code
-boosted.rq <- 
-  boostrq(formula = mpg ~ brq(hp:cyl, cyl * hp) + brq(am), data = mtcars, mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 
+### Fitting your first boosting regression quantiles model.
+boosted.rq <- 
+  boostrq(
+    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used
+    data = mtcars, 
+    mstop = 200, 
+    nu = 0.1, 
+    tau = 0.5, 
+    offset = 0.5
+  )
+
+### Get some basic information about your model 
+boosted.rq$formula # the model formula
+#> mpg ~ brq(cyl * hp) + brq(am, wt)
+
+boosted.rq$nu # the learning rate
+#> [1] 0.1
+
+boosted.rq$offset # the initialization of the algorithm (default: median of response)
+#>  50% 
+#> 19.2
+
+boosted.rq$baselearner.names # names of the baselearners
+#> [1] "brq(cyl * hp)" "brq(am, wt)"
+
+boosted.rq$call # the model call
+#> boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars, 
+#>     mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+
+boosted.rq$mstop() # current number of iterations
+#> [1] 200
+
+# or use
+mstop(boosted.rq)
+#> [1] 200
+
+### Print your fitted model to get a collection of that basic information
 boosted.rq
 #> 
 #>   Boosting Regression Qauntiles
 #> 
-#> Call:  boostrq(formula = mpg ~ brq(hp:cyl, cyl * hp) + brq(am), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#> formula: mpg ~ brq(hp:cyl, cyl * hp) + brq(am)
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
 #> 
 #> 
 #>   Quantile Regression
@@ -49,16 +90,140 @@ boosted.rq
 #> Step size: = 0.1 
 #> Offset:  19.2 
 #> Number of baselearners:  2
-coef(boosted.rq)
-#> $`brq(hp:cyl, cyl * hp)`
-#>  (Intercept)          cyl           hp       hp:cyl 
-#> 19.689758198 -2.337799370 -0.093223812  0.009128088 
+
+### Selection frequency of each component
+boosted.rq$selection.freqs()
+#>     Intercept brq(cyl * hp)   brq(am, wt) 
+#>         0.385         0.345         0.270
+
+### Estimated coefficients for current number of iterations
+boosted.rq$coef(aggregate = "sum") # also try aggregate = "cumsum" or "none"
+#> $`brq(cyl * hp)`
+#> (Intercept)         cyl          hp      cyl:hp 
+#> 19.33792010 -2.47917356 -0.09859763  0.01061430 
 #> 
-#> $`brq(am)`
-#> (Intercept)          am 
-#>   -1.399999    2.999999 
+#> $`brq(am, wt)`
+#> (Intercept)          am          wt 
+#>    3.133808    1.861487   -1.167737 
 #> 
 #> $offset
 #>  50% 
 #> 19.2
+
+# or use
+coef(boosted.rq, aggregate = "sum")
+#> $`brq(cyl * hp)`
+#> (Intercept)         cyl          hp      cyl:hp 
+#> 19.33792010 -2.47917356 -0.09859763  0.01061430 
+#> 
+#> $`brq(am, wt)`
+#> (Intercept)          am          wt 
+#>    3.133808    1.861487   -1.167737 
+#> 
+#> $offset
+#>  50% 
+#> 19.2
+```
+
+``` r
+### Have a look at the underlying baselearner model matrices
+boosted.rq$baselearner.matrix()
+
+### Selected component for each iteration
+boosted.rq$xselect()
+c("Intercept", boosted.rq$baselearner.names)[boosted.rq$xselect() + 1]
+```
+
+``` r
+### Current working residuals (negative gradients)
+boosted.rq$neg.gradients()
+
+### Course of empirical risk during the boosting process
+boosted.rq$risk()
+
+### Current fitted values
+boosted.rq$fitted()
+# or use
+fitted(boosted.rq)
+
+### Current residuals
+boosted.rq$resid()
+# or use
+residuals(boosted.rq)
+
+### Model predictions
+dat.pred <- data.frame(
+  mpg = c(NA, NA), # the response variable has to be included in the new dataset!
+  cyl = c(4, 6),
+  hp = c(90, 134),
+  wt = c(3.125, 2.485), 
+  am = c(1, 0)
+)
+boosted.rq$predict(newdata = dat.pred, aggregate = "sum") # also try aggregate = "cumsum" or "none"
+# or use
+predict(boosted.rq, newdata = dat.pred, aggregate = "sum")
+```
+
+``` r
+### Update the number of iterations without to fully refit the model
+### If mstop_new > mstop_current: The fitting process will start at the current number of iterations
+### If mstop_new < mstop_current: The model result are subsetted, thus, the model is not refitted
+
+boosted.rq[300]
+#> 
+#>   Boosting Regression Qauntiles
+#> 
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
+#> 
+#> 
+#>   Quantile Regression
+#> Loss Function: tau * (y - f) * ((y - f) > 0) +
+#>         (tau - 1) * (y - f) * ((y - f) <= 0)
+#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
+#> 
+#> Number of boosting iterations: mstop = 300 
+#> Step size: = 0.1 
+#> Offset:  19.2 
+#> Number of baselearners:  2
+
+# or use
+boosted.rq$subset(300)
+boosted.rq
+#> 
+#>   Boosting Regression Qauntiles
+#> 
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
+#> 
+#> 
+#>   Quantile Regression
+#> Loss Function: tau * (y - f) * ((y - f) > 0) +
+#>         (tau - 1) * (y - f) * ((y - f) <= 0)
+#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
+#> 
+#> Number of boosting iterations: mstop = 300 
+#> Step size: = 0.1 
+#> Offset:  19.2 
+#> Number of baselearners:  2
+
+# or use
+mstop(boosted.rq) <- 100
+boosted.rq
+#> 
+#>   Boosting Regression Qauntiles
+#> 
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
+#> 
+#> 
+#>   Quantile Regression
+#> Loss Function: tau * (y - f) * ((y - f) > 0) +
+#>         (tau - 1) * (y - f) * ((y - f) <= 0)
+#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
+#> 
+#> Number of boosting iterations: mstop = 100 
+#> Step size: = 0.1 
+#> Offset:  19.2 
+#> Number of baselearners:  2
 ```

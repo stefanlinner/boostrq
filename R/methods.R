@@ -18,6 +18,7 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
   checkmate::assert_class(object, "boostrq")
 
   args <- list(...)
+
   if (length(args) > 0) {
     warning("Arguments ", paste(names(args), sep = ", "), " unknown")
   }
@@ -44,6 +45,7 @@ fitted.boostrq <- function(object, ...) {
   checkmate::assert_class(object, "boostrq")
 
   args <- list(...)
+
   if (length(args) > 0) {
     warning("Arguments ", paste(names(args), sep = ", "), " unknown")
   }
@@ -112,6 +114,7 @@ residuals.boostrq <- function(object, ...) {
   checkmate::assert_class(object, "boostrq")
 
   args <- list(...)
+
   if (length(args) > 0) {
     warning("Arguments ", paste(names(args), sep = ", "), " unknown")
   }
@@ -146,6 +149,7 @@ residuals.boostrq <- function(object, ...) {
 
   if(return) return(x)
   invisible(NULL)
+
 }
 
 
