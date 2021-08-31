@@ -2,7 +2,12 @@
 #'
 #' @param object object of class boostrq
 #' @param which a subset of base-learners
-#' @param aggregate a character specifying how to aggregate coefficients of single base learners. The default returns the coefficient for the final number of boosting iterations. "cumsum" returns a list with matrices (one per base-learner) with the cumulative coefficients for all iterations. "none" returns a list of matrices where the jth columns of the respective matrix contains coefficients of the base-learner of the jth boosting iteration.
+#' @param aggregate a character specifying how to aggregate coefficients of
+#' single base learners. The default returns the coefficient for the final number
+#' of boosting iterations. "cumsum" returns a list with matrices (one per base-learner)
+#' with the cumulative coefficients for all iterations. "none" returns a list of
+#' matrices where the jth columns of the respective matrix contains coefficients
+#' of the base-learner of the jth boosting iteration.
 #' @param ... additional arguments passed to callies
 #'
 #' @return coef extracts the regression coefficients of the fitted boostrq model.
@@ -216,9 +221,15 @@ mstop.boostrq <- function(object, ...) {
 #' Model predictions for boosting regression quantiles
 #'
 #' @param object a boostrq object
-#' @param newdata a data.frame with the same columns as the training data (including also the dependent variable with NA values)
+#' @param newdata a data.frame (or data.table) including all covariates contained in the
+#' baselearners, as well as the response variable (with NA values)
 #' @param which a subset of base-learners
-#' @param aggregate a character specifying how to aggregate coefficients of single base learners. The default returns the coefficient for the final number of boosting iterations. "cumsum" returns a list with matrices (one per base-learner) with the cumulative coefficients for all iterations. "none" returns a list of matrices where the jth columns of the respective matrix contains coefficients of the base-learner of the jth boosting iteration.
+#' @param aggregate a character specifying how to aggregate coefficients of
+#' single base learners. The default returns the coefficient for the final number
+#' of boosting iterations. "cumsum" returns a list with matrices (one per base-learner)
+#' with the cumulative coefficients for all iterations. "none" returns a list of
+#' matrices where the jth columns of the respective matrix contains coefficients
+#' of the base-learner of the jth boosting iteration.
 #' @param ... additional arguments passed to callies
 #'
 #' @return predictions for the new data

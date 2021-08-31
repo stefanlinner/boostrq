@@ -11,7 +11,12 @@
 
 \item{which}{a subset of base-learners}
 
-\item{aggregate}{a character specifying how to aggregate coefficients of single base learners. The default returns the coefficient for the final number of boosting iterations. "cumsum" returns a list with matrices (one per base-learner) with the cumulative coefficients for all iterations. "none" returns a list of matrices where the jth columns of the respective matrix contains coefficients of the base-learner of the jth boosting iteration.}
+\item{aggregate}{a character specifying how to aggregate coefficients of
+single base learners. The default returns the coefficient for the final number
+of boosting iterations. "cumsum" returns a list with matrices (one per base-learner)
+with the cumulative coefficients for all iterations. "none" returns a list of
+matrices where the jth columns of the respective matrix contains coefficients
+of the base-learner of the jth boosting iteration.}
 
 \item{...}{additional arguments passed to callies}
 }

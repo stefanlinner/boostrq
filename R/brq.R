@@ -3,7 +3,9 @@
 #' Base-learner for linear quantile regression.
 #'
 #' @param ... one or more predictor variables.
-#' @param method the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.
+#' @param method the algortihm used to fit the quantile regression, the default
+#' is set to "fn", referring to the Frisch-Newton inferior point method.
+#' For more details see the documentation of quantreg::rq.
 #'
 #'
 #' @return brq returns a string, which is used to specifiy the formula in the fitting process.

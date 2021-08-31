@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/stefanlinner/boostrq/workflows/R-CMD-check/badge.svg)](https://github.com/stefanlinner/boostrq/actions)
 <!-- badges: end -->
 
-Package for boosting regression quantiles (Bauer, Haupt, & Linner, 2021). The functionality as well as the implementation was heavily inspired by the great package for model-based boosting [mboost](https://github.com/boost-R).
+Package for boosting regression quantiles (Bauer, Haupt, & Linner, 2021). The functionality as well as the implementation was heavily inspired by the great package for model-based boosting [mboost](https://github.com/boost-R/mboost).
 Until now, only the linear baselearner (brq) is implemented, the nonlinear baselearner (brqss) will follow soon.
 
 ## Installation
@@ -43,7 +43,7 @@ library(boostrq)
 ### Fitting your first boosting regression quantiles model.
 boosted.rq <- 
   boostrq(
-    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used
+    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used in the function brq()
     data = mtcars, 
     mstop = 200, 
     nu = 0.1, 
@@ -80,7 +80,6 @@ boosted.rq$coef(aggregate = "sum") # also try aggregate = "cumsum" or "none"
 coef(boosted.rq, aggregate = "sum")
 
 ```
-
 ```{r, results='hide'}
 ### Have a look at the underlying baselearner model matrices
 boosted.rq$baselearner.matrix()
@@ -89,9 +88,6 @@ boosted.rq$baselearner.matrix()
 boosted.rq$xselect()
 c("Intercept", boosted.rq$baselearner.names)[boosted.rq$xselect() + 1]
 
-```
-
-```{r, results='hide'}
 ### Current working residuals (negative gradients)
 boosted.rq$neg.gradients()
 

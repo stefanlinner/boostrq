@@ -9,7 +9,9 @@ brq(..., method = "fn")
 \arguments{
 \item{...}{one or more predictor variables.}
 
-\item{method}{the algortihm used to fit the quantile regression, the default is set to "fn", referring to the Frisch-Newton inferior point method. For more details see the documentation of quantreg::rq.}
+\item{method}{the algortihm used to fit the quantile regression, the default
+is set to "fn", referring to the Frisch-Newton inferior point method.
+For more details see the documentation of quantreg::rq.}
 }
 \value{
 brq returns a string, which is used to specifiy the formula in the fitting process.

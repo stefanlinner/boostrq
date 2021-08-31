@@ -2,14 +2,22 @@
 % Please edit documentation in R/boostrq.R
 \name{boostrq}
 \alias{boostrq}
-\title{boosting regression quantiles}
+\title{fitting a boosting regression quantiles model}
 \usage{
-boostrq(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5)
+boostrq(
+  formula,
+  data = NULL,
+  mstop = 100,
+  nu = 0.1,
+  tau = 0.5,
+  offset = 0.5,
+  digits = 10
+)
 }
 \arguments{
 \item{formula}{a symbolic description of the model to be fit.}
 
-\item{data}{a data frame containing the variables stated in the formula.}
+\item{data}{a data frame (or data.table) containing the variables stated in the formula.}
 
 \item{mstop}{number of iterations, as integer}
 
@@ -18,13 +26,20 @@ boostrq(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5)
 \item{tau}{quantile parameter, as numeric}
 
 \item{offset}{quantile paramter used to initialize the algortihm}
+
+\item{digits}{number of digits the slope parameter different from zero to be
+considered the best-fitting component, as integer.}
 }
 \value{
-A (generalized) additive quantile regression model is fitted using the boosting regression quantiles algorithm, which is a functional component-wise boosting algorithm.
-The base-learner can be specified via the formula object. brq (linear quantile regression) and brqss(nonlinear quantile regression) are available base-learner.
+A (generalized) additive quantile regression model is fitted using
+the boosting regression quantiles algorithm, which is a functional component-wise
+boosting algorithm.
+The base-learner can be specified via the formula object. brq (linear quantile regression)
+and brqss(nonlinear quantile regression) are available base-learner.
 }
 \description{
-Component-wise functional gradient boosting algorithm to fit a quantile regression model.
+Component-wise functional gradient boosting algorithm to fit a quantile
+regression model.
 }
 \examples{
 boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,

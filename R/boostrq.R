@@ -1,42 +1,56 @@
-#' boosting regression quantiles
+#' fitting a boosting regression quantiles model
 #'
-#' Component-wise functional gradient boosting algorithm to fit a quantile regression model.
+#' Component-wise functional gradient boosting algorithm to fit a quantile
+#' regression model.
 #'
 #' @param mstop number of iterations, as integer
 #' @param nu learning rate, as numeric
 #' @param tau quantile parameter, as numeric
 #' @param offset quantile paramter used to initialize the algortihm
 #' @param formula a symbolic description of the model to be fit.
-#' @param data a data frame containing the variables stated in the formula.
+#' @param data a data frame (or data.table) containing the variables stated in the formula.
+#' @param digits number of digits the slope parameter different from zero to be
+#' considered the best-fitting component, as integer.
 #'
 #' @import quantreg checkmate
 #' @importFrom stats terms as.formula model.matrix na.omit quantile model.frame
 #'
-#' @return A (generalized) additive quantile regression model is fitted using the boosting regression quantiles algorithm, which is a functional component-wise boosting algorithm.
-#' The base-learner can be specified via the formula object. brq (linear quantile regression) and brqss(nonlinear quantile regression) are available base-learner.
+#' @return A (generalized) additive quantile regression model is fitted using
+#' the boosting regression quantiles algorithm, which is a functional component-wise
+#' boosting algorithm.
+#' The base-learner can be specified via the formula object. brq (linear quantile regression)
+#' and brqss(nonlinear quantile regression) are available base-learner.
 #' @export
 #'
 #' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
 #' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 #'
-boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5) {
+boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, digits = 10) {
 
   mstop <- as.integer(mstop)
+  digits <- as.integer(digits)
 
   ### Asserting input parameters
+  checkmate::assert_integer(digits, lower = 1, len = 1)
   checkmate::assert_integer(mstop, lower = 1, len = 1)
   checkmate::assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
   checkmate::assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
   checkmate::assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
-  checkmate::assert_data_frame(data, all.missing = FALSE)
+  checkmate::assert(
+    checkmate::check_data_frame(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
+    checkmate::check_data_table(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
+    combine = "or"
+  )
 
   ### Getting response variable name
   response <- all.vars(formula[[2]])
   checkmate::assert_string(response)
+  checkmate::assert_choice(response, choices = names(data))
 
   ## Getting covariate names
   covariates <- all.vars(formula[[3]])
   checkmate::assert_character(covariates, all.missing = FALSE)
+  checkmate::assert_subset(covariates, choices = names(data), empty.ok = FALSE)
 
   ### Getting baselearner names
   baselearner <- attr(stats::terms(formula), "term.labels")
@@ -47,7 +61,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   }
 
   ### Removing observations, where response value is NA
-  data <- data[!is.na(data[, response]), ]
+  data <- data[!is.na(data[[response]]), ]
   y <- data[[response]]
 
   ### Evaluating baselearner functions (brq() and brqss())
@@ -134,7 +148,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
       ### Determining the best fitting component
       ### HUHU: Denk nochmal über die Genze 10te Nachkommastelle nach...
-      if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], 10)) > 0)){
+      if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], digits)) > 0)){
         appearances[m] <<- which.min(bl.risk)
       } else {
         appearances[m] <<- 0
@@ -254,7 +268,11 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   ### Predicition function
   RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
-    checkmate::assert_data_frame(newdata, min.rows = 1, col.names = "named")
+    checkmate::assert(
+      checkmate::check_data_frame(data, min.rows = 1, min.cols = 2, col.names = "named"),
+      checkmate::check_data_table(data, min.rows = 1, min.cols = 2, col.names = "named"),
+      combine = "or"
+    )
     checkmate::assert_subset(c(response, covariates), choices = names(newdata), empty.ok = FALSE)
     checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
     checkmate::assert_subset(which, choices = baselearner)

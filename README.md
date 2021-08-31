@@ -13,7 +13,7 @@ status](https://travis-ci.com/stefanlinner/boostrq.svg?branch=master)](https://t
 Package for boosting regression quantiles (Bauer, Haupt, & Linner,
 2021). The functionality as well as the implementation was heavily
 inspired by the great package for model-based boosting
-[mboost](https://github.com/boost-R). Until now, only the linear
+[mboost](https://github.com/boost-R/mboost). Until now, only the linear
 baselearner (brq) is implemented, the nonlinear baselearner (brqss) will
 follow soon.
 
@@ -39,7 +39,7 @@ library(boostrq)
 ### Fitting your first boosting regression quantiles model.
 boosted.rq <- 
   boostrq(
-    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used
+    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used in the function brq()
     data = mtcars, 
     mstop = 200, 
     nu = 0.1, 
@@ -132,9 +132,7 @@ boosted.rq$baselearner.matrix()
 ### Selected component for each iteration
 boosted.rq$xselect()
 c("Intercept", boosted.rq$baselearner.names)[boosted.rq$xselect() + 1]
-```
 
-``` r
 ### Current working residuals (negative gradients)
 boosted.rq$neg.gradients()
 
