@@ -124,15 +124,20 @@ predict(boosted.rq, newdata = dat.pred, aggregate = "sum")
 ### If mstop_new > mstop_current: The fitting process will start at the current number of iterations
 ### If mstop_new < mstop_current: The model result are subsetted, thus, the model is not refitted
 
-boosted.rq[300]
+### current number of iterations
+boosted.rq$mstop()
+
+### Update number of iterations
+boosted.rq <- boosted.rq[300]
+boosted.rq$mstop()
 
 # or use
-boosted.rq$subset(300)
-boosted.rq
+boosted.rq$subset(400)
+boosted.rq$mstop()
 
 # or use
 mstop(boosted.rq) <- 100
-boosted.rq
+boosted.rq$mstop()
 
 ```
 

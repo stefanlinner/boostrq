@@ -32,7 +32,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   ### Asserting input parameters
   checkmate::assert_integer(digits, lower = 1, len = 1)
-  checkmate::assert_integer(mstop, lower = 1, len = 1)
+  checkmate::assert_integer(mstop, lower = 0, len = 1)
   checkmate::assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
   checkmate::assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
   checkmate::assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
@@ -186,7 +186,11 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
   ### Selected component in each iteration
   RETURN$xselect <- function() {
-    appearances[1:count.m]
+    if(count.m > 0) {
+      return(appearances[1:count.m])
+    } else {
+      return(NULL)
+    }
   }
 
   ### Current fitted values
@@ -230,10 +234,14 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       which <- baselearner
     }
 
-    if(aggregate == "none"){
+    if(count.m == 0) {
+      return(list(offset = stats::quantile(y, offset)))
+    }
+
+    if(aggregate == "none" & count.m > 0){
       coefpath.none <- lapply(which,
                               function(x){
-                                coefpath[[x]][1:count.m, ]
+                                coefpath[[x]][1:count.m, , drop = FALSE]
                               }
       )
       names(coefpath.none) <- which
@@ -241,10 +249,10 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       return(coefpath.none)
     }
 
-    if(aggregate == "sum"){
+    if(aggregate == "sum" & count.m > 0){
       coefpath.sum <- lapply(which,
                              function(x){
-                               colSums(coefpath[[x]][1:count.m, ])
+                               colSums(coefpath[[x]][1:count.m, , drop = FALSE])
                              }
       )
       names(coefpath.sum) <- which
@@ -252,10 +260,14 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       return(coefpath.sum)
     }
 
-    if(aggregate == "cumsum"){
+    if(aggregate == "cumsum" & count.m > 0){
       coefpath.cumsum <- lapply(which,
                                 function(x){
-                                  apply(coefpath[[x]][1:count.m, ], MARGIN = 2, FUN = cumsum)
+                                  if(count.m == 1) {
+                                    return(t(as.matrix(apply(coefpath[[x]][1:count.m, , drop = FALSE], MARGIN = 2, FUN = cumsum))))
+                                  } else {
+                                    return(apply(coefpath[[x]][1:count.m, , drop = FALSE], MARGIN = 2, FUN = cumsum))
+                                  }
                                 }
       )
       names(coefpath.cumsum) <- which
@@ -301,7 +313,13 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       )
     names(newdata.model.matrix) <- which
 
-    if(aggregate == "sum"){
+    if(count.m == 0) {
+      predictions <- rep(stats::quantile(y, offset), length(y))
+      names(predictions) <- NULL
+      return(predictions)
+    }
+
+    if(aggregate == "sum" & count.m > 0) {
       bl.predictions <-
         lapply(which,
                function(x){
@@ -312,7 +330,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       return(predictions)
     }
 
-    if(aggregate == "cumsum") {
+    if(aggregate == "cumsum" & count.m > 0) {
       bl.predictions <-
         lapply(which,
                function(x){
@@ -327,7 +345,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
       return(predictions.cum)
     }
 
-    if(aggregate == "none") {
+    if(aggregate == "none" & count.m > 0) {
       bl.predictions <-
         lapply(which,
                function(x){
@@ -350,7 +368,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
     i <- as.integer(i)
 
-    checkmate::assert_integer(i, lower = 1, any.missing = FALSE, len = 1)
+    checkmate::assert_integer(i, lower = 0, any.missing = FALSE, len = 1)
 
     if(i <= count.m || i <= length(appearances)) {
       if(i != count.m){

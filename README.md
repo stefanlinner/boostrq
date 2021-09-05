@@ -167,61 +167,22 @@ predict(boosted.rq, newdata = dat.pred, aggregate = "sum")
 ### If mstop_new > mstop_current: The fitting process will start at the current number of iterations
 ### If mstop_new < mstop_current: The model result are subsetted, thus, the model is not refitted
 
-boosted.rq[300]
-#> 
-#>   Boosting Regression Qauntiles
-#> 
-#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
-#> 
-#> 
-#>   Quantile Regression
-#> Loss Function: tau * (y - f) * ((y - f) > 0) +
-#>         (tau - 1) * (y - f) * ((y - f) <= 0)
-#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
-#> 
-#> Number of boosting iterations: mstop = 300 
-#> Step size: = 0.1 
-#> Offset:  19.2 
-#> Number of baselearners:  2
+### current number of iterations
+boosted.rq$mstop()
+#> [1] 200
+
+### Update number of iterations
+boosted.rq <- boosted.rq[300]
+boosted.rq$mstop()
+#> [1] 300
 
 # or use
-boosted.rq$subset(300)
-boosted.rq
-#> 
-#>   Boosting Regression Qauntiles
-#> 
-#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
-#> 
-#> 
-#>   Quantile Regression
-#> Loss Function: tau * (y - f) * ((y - f) > 0) +
-#>         (tau - 1) * (y - f) * ((y - f) <= 0)
-#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
-#> 
-#> Number of boosting iterations: mstop = 300 
-#> Step size: = 0.1 
-#> Offset:  19.2 
-#> Number of baselearners:  2
+boosted.rq$subset(400)
+boosted.rq$mstop()
+#> [1] 400
 
 # or use
 mstop(boosted.rq) <- 100
-boosted.rq
-#> 
-#>   Boosting Regression Qauntiles
-#> 
-#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
-#> 
-#> 
-#>   Quantile Regression
-#> Loss Function: tau * (y - f) * ((y - f) > 0) +
-#>         (tau - 1) * (y - f) * ((y - f) <= 0)
-#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
-#> 
-#> Number of boosting iterations: mstop = 100 
-#> Step size: = 0.1 
-#> Offset:  19.2 
-#> Number of baselearners:  2
+boosted.rq$mstop()
+#> [1] 100
 ```
