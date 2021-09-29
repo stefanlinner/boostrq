@@ -153,5 +153,5 @@ test_that("prediction output is correct", {
 #
 # })
 
-## teste auch auf expect_error
+## teste auch auf expect_error unter extra file: test-conditions.R
 

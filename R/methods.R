@@ -15,9 +15,19 @@
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' coef(model, aggregate = "cumsum")
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' coef(boosted.rq, aggregate = "cumsum")
+#'
 coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 
   checkmate::assert_class(object, "boostrq")
@@ -42,9 +52,19 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' fitted(model)
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' fitted(boosted.rq)
+#'
 fitted.boostrq <- function(object, ...) {
 
   checkmate::assert_class(object, "boostrq")
@@ -70,9 +90,19 @@ fitted.boostrq <- function(object, ...) {
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' model
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' boosted.rq
+#'
 print.boostrq <- function(x, ...){
 
   checkmate::assert_class(x, "boostrq")
@@ -111,9 +141,19 @@ print.boostrq <- function(x, ...){
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' residuals(model)
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' residuals(boosted.rq)
+#'
 residuals.boostrq <- function(object, ...) {
 
   checkmate::assert_class(object, "boostrq")
@@ -141,9 +181,18 @@ residuals.boostrq <- function(object, ...) {
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' model[500]
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' boosted.rq[500]
 #'
 "[.boostrq" <- function(x, i, return = TRUE, ...) {
 
@@ -166,9 +215,19 @@ residuals.boostrq <- function(object, ...) {
 #' @return current number of boosting iterations
 #' @export
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' mstop(model)
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' mstop(boosted.rq)
+#'
 mstop <- function(object, ...) {
   UseMethod("mstop")
 }
@@ -184,9 +243,19 @@ mstop <- function(object, ...) {
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' mstop(model)
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' mstop(boosted.rq)
+#'
 mstop.boostrq <- function(object, ...) {
 
   checkmate::assert_class(object, "boostrq")
@@ -206,9 +275,19 @@ mstop.boostrq <- function(object, ...) {
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' mstop(model) <- 500
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' mstop(boosted.rq) <- 500
+#'
 "mstop<-" <- function(x, value) {
 
   checkmate::assert_class(x, "boostrq")
@@ -237,10 +316,21 @@ mstop.boostrq <- function(object, ...) {
 #'
 #' @import checkmate
 #'
-#' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1)
-#' predict(model, newdata = predict.data)
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#' )
+#'
+#' predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1, wt = 3.125)
+#'
+#' predict(boosted.rq, newdata = predict.data)
+#'
 predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "sum", ...) {
 
   checkmate::assert_class(object, "boostrq")
@@ -262,9 +352,17 @@ predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "s
 #' #'
 #' #' @import checkmate
 #' #'
-#' #' @examples model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' #' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#' #' resid(model)
+#' #' @examples
+# boosted.rq <-
+# boostrq(
+#  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#  data = mtcars,
+#  mstop = 200,
+#  nu = 0.1,
+#  tau = 0.5,
+#  offset = 0.5
+# )
+#' #' resid(boosted.rq)
 #' resid.boostrq <- function(object, ...) {
 #'
 #'   checkmate::assert_class(object, "boostrq")

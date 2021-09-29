@@ -42,7 +42,22 @@ Component-wise functional gradient boosting algorithm to fit a quantile
 regression model.
 }
 \examples{
-boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+boosted.rq <-
+boostrq(
+ formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ data = mtcars,
+ mstop = 200,
+ nu = 0.1,
+ tau = 0.5,
+ offset = 0.5
+)
+
+boosted.rq$mstop()
+
+boosted.rq$selection.freqs()
+
+boosted.rq$coef()
+
+boosted.rq$risk()
 
 }

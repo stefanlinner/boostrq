@@ -30,8 +30,18 @@ predictions for the new data
 Model predictions for boosting regression quantiles
 }
 \examples{
-model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1)
-predict(model, newdata = predict.data)
+boosted.rq <-
+boostrq(
+ formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ data = mtcars,
+ mstop = 200,
+ nu = 0.1,
+ tau = 0.5,
+ offset = 0.5
+)
+
+predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1, wt = 3.125)
+
+predict(boosted.rq, newdata = predict.data)
+
 }

@@ -27,7 +27,16 @@ coef extracts the regression coefficients of the fitted boostrq model.
 estimated coefficients of boosting regression quantiles
 }
 \examples{
-model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-coef(model, aggregate = "cumsum")
+boosted.rq <-
+boostrq(
+ formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ data = mtcars,
+ mstop = 200,
+ nu = 0.1,
+ tau = 0.5,
+ offset = 0.5
+)
+
+coef(boosted.rq, aggregate = "cumsum")
+
 }

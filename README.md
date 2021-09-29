@@ -39,7 +39,7 @@ library(boostrq)
 ### Fitting your first boosting regression quantiles model.
 boosted.rq <- 
   boostrq(
-    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used in the function brq()
+    formula = mpg ~ brq(cyl * hp) + brq(am + wt), # all common formula operators (*,:,^, etc.) can be used in the function brq()
     data = mtcars, 
     mstop = 200, 
     nu = 0.1, 
@@ -49,7 +49,7 @@ boosted.rq <-
 
 ### Get some basic information about your model 
 boosted.rq$formula # the model formula
-#> mpg ~ brq(cyl * hp) + brq(am, wt)
+#> mpg ~ brq(cyl * hp) + brq(am + wt)
 
 boosted.rq$nu # the learning rate
 #> [1] 0.1
@@ -59,10 +59,10 @@ boosted.rq$offset # the initialization of the algorithm (default: median of resp
 #> 19.2
 
 boosted.rq$baselearner.names # names of the baselearners
-#> [1] "brq(cyl * hp)" "brq(am, wt)"
+#> [1] "brq(cyl * hp)" "brq(am + wt)"
 
 boosted.rq$call # the model call
-#> boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars, 
+#> boostrq(formula = mpg ~ brq(cyl * hp) + brq(am + wt), data = mtcars, 
 #>     mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
 
 boosted.rq$mstop() # current number of iterations
@@ -77,8 +77,8 @@ boosted.rq
 #> 
 #>   Boosting Regression Qauntiles
 #> 
-#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am, wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-#> formula: mpg ~ brq(cyl * hp) + brq(am, wt)
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am + wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#> formula: mpg ~ brq(cyl * hp) + brq(am + wt)
 #> 
 #> 
 #>   Quantile Regression
@@ -93,7 +93,7 @@ boosted.rq
 
 ### Selection frequency of each component
 boosted.rq$selection.freqs()
-#>     Intercept brq(cyl * hp)   brq(am, wt) 
+#>     Intercept brq(cyl * hp)  brq(am + wt) 
 #>         0.385         0.345         0.270
 
 ### Estimated coefficients for current number of iterations
@@ -102,7 +102,7 @@ boosted.rq$coef(aggregate = "sum") # also try aggregate = "cumsum" or "none"
 #> (Intercept)         cyl          hp      cyl:hp 
 #> 19.33792010 -2.47917356 -0.09859763  0.01061430 
 #> 
-#> $`brq(am, wt)`
+#> $`brq(am + wt)`
 #> (Intercept)          am          wt 
 #>    3.133808    1.861487   -1.167737 
 #> 
@@ -116,7 +116,7 @@ coef(boosted.rq, aggregate = "sum")
 #> (Intercept)         cyl          hp      cyl:hp 
 #> 19.33792010 -2.47917356 -0.09859763  0.01061430 
 #> 
-#> $`brq(am, wt)`
+#> $`brq(am + wt)`
 #> (Intercept)          am          wt 
 #>    3.133808    1.861487   -1.167737 
 #> 

@@ -22,8 +22,16 @@ a boostrq object with the updated number of iterations
 Updating number of iterations
 }
 \examples{
-model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-model[500]
+boosted.rq <-
+boostrq(
+ formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ data = mtcars,
+ mstop = 200,
+ nu = 0.1,
+ tau = 0.5,
+ offset = 0.5
+)
+
+boosted.rq[500]
 
 }

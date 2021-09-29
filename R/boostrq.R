@@ -22,8 +22,24 @@
 #' and brqss(nonlinear quantile regression) are available base-learner.
 #' @export
 #'
-#' @examples boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-#' mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5,
+#'  offset = 0.5
+#')
+#'
+#' boosted.rq$mstop()
+#'
+#' boosted.rq$selection.freqs()
+#'
+#' boosted.rq$coef()
+#'
+#' boosted.rq$risk()
 #'
 boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, digits = 10) {
 
@@ -148,6 +164,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
 
       ### Determining the best fitting component
       ### HUHU: Denk nochmal über die Genze 10te Nachkommastelle nach...
+      ### HUHU: Nicht eher any?
       if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], digits)) > 0)){
         appearances[m] <<- which.min(bl.risk)
       } else {

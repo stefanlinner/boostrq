@@ -43,7 +43,7 @@ library(boostrq)
 ### Fitting your first boosting regression quantiles model.
 boosted.rq <- 
   boostrq(
-    formula = mpg ~ brq(cyl * hp) + brq(am, wt), # all common formula operators (*,:,^, etc.) can be used in the function brq()
+    formula = mpg ~ brq(cyl * hp) + brq(am + wt), # all common formula operators (*,:,^, etc.) can be used in the function brq()
     data = mtcars, 
     mstop = 200, 
     nu = 0.1, 

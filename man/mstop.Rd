@@ -18,7 +18,16 @@ current number of boosting iterations
 s3 method class for 'boostrq'
 }
 \examples{
-model <- boostrq(mpg ~ brq(hp:cyl, cyl*hp) + brq(am), data = mtcars,
-mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
-mstop(model)
+boosted.rq <-
+boostrq(
+ formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ data = mtcars,
+ mstop = 200,
+ nu = 0.1,
+ tau = 0.5,
+ offset = 0.5
+)
+
+mstop(boosted.rq)
+
 }
