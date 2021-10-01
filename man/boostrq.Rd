@@ -10,7 +10,7 @@ boostrq(
   mstop = 100,
   nu = 0.1,
   tau = 0.5,
-  offset = 0.5,
+  offset = NULL,
   digits = 10
 )
 }
@@ -25,7 +25,7 @@ boostrq(
 
 \item{tau}{quantile parameter, as numeric}
 
-\item{offset}{quantile paramter used to initialize the algortihm}
+\item{offset}{a numeric vector used as offset.}
 
 \item{digits}{number of digits the slope parameter different from zero to be
 considered the best-fitting component, as integer.}
@@ -48,8 +48,7 @@ boostrq(
  data = mtcars,
  mstop = 200,
  nu = 0.1,
- tau = 0.5,
- offset = 0.5
+ tau = 0.5
 )
 
 boosted.rq$mstop()

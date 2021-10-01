@@ -6,7 +6,7 @@
 #' @param mstop number of iterations, as integer
 #' @param nu learning rate, as numeric
 #' @param tau quantile parameter, as numeric
-#' @param offset quantile paramter used to initialize the algortihm
+#' @param offset a numeric vector used as offset.
 #' @param formula a symbolic description of the model to be fit.
 #' @param data a data frame (or data.table) containing the variables stated in the formula.
 #' @param digits number of digits the slope parameter different from zero to be
@@ -29,8 +29,7 @@
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #')
 #'
 #' boosted.rq$mstop()
@@ -41,7 +40,7 @@
 #'
 #' boosted.rq$risk()
 #'
-boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = 0.5, digits = 10) {
+boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offset = NULL, digits = 10) {
 
   mstop <- as.integer(mstop)
   digits <- as.integer(digits)
@@ -50,7 +49,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   checkmate::assert_integer(digits, lower = 1, len = 1)
   checkmate::assert_integer(mstop, lower = 0, len = 1)
   checkmate::assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
-  checkmate::assert_numeric(offset, len = 1, upper = 0.99999, lower = 0.00001)
+  checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
   checkmate::assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
   checkmate::assert(
     checkmate::check_data_frame(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
@@ -126,7 +125,17 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   risk <- vector("numeric", length = mstop + 1)
 
   ### Defining intial fitted values
-  fit <- rep(stats::quantile(y, offset), length(y))
+  if(is.null(offset)){
+    offset <- stats::quantile(y, tau)
+    fit <- rep(offset, length(y))
+  }
+
+  if(!is.null(offset)){
+    fit <- offset
+    if(length(unique(offset)) == 1){
+      offset <- offset[1]
+    }
+  }
 
   risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
 
@@ -193,7 +202,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   RETURN <- list(
     formula = formula,
     nu = nu,
-    offset = stats::quantile(y, offset),
+    offset = offset,
     baselearner.names = baselearner,
     call = match.call()
   )
@@ -252,7 +261,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     }
 
     if(count.m == 0) {
-      return(list(offset = stats::quantile(y, offset)))
+      return(list(offset = offset))
     }
 
     if(aggregate == "none" & count.m > 0){
@@ -262,7 +271,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                               }
       )
       names(coefpath.none) <- which
-      coefpath.none$offset <- stats::quantile(y, offset)
+      coefpath.none$offset <- offset
       return(coefpath.none)
     }
 
@@ -273,7 +282,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                              }
       )
       names(coefpath.sum) <- which
-      coefpath.sum$offset <- stats::quantile(y, offset)
+      coefpath.sum$offset <- offset
       return(coefpath.sum)
     }
 
@@ -288,7 +297,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                                 }
       )
       names(coefpath.cumsum) <- which
-      coefpath.cumsum$offset <- stats::quantile(y, offset)
+      coefpath.cumsum$offset <- offset
       return(coefpath.cumsum)
     }
 
@@ -331,7 +340,12 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
     names(newdata.model.matrix) <- which
 
     if(count.m == 0) {
-      predictions <- rep(stats::quantile(y, offset), length(y))
+      if(length(offset) == 1){
+        predictions <- rep(offset, length(y))
+      }
+      if(length(offset) > 1){
+        predictions <- offset
+      }
       names(predictions) <- NULL
       return(predictions)
     }
@@ -343,7 +357,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                  newdata.model.matrix[[x]] %*% RETURN$coef(which = which, aggregate = aggregate)[[x]]
                }
         )
-      predictions <- Reduce('+', bl.predictions) + stats::quantile(y, offset)
+      predictions <- Reduce('+', bl.predictions) + offset
       return(predictions)
     }
 
@@ -358,7 +372,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                  )
                }
         )
-      predictions.cum <- Reduce('+', bl.predictions) + stats::quantile(y, offset)
+      predictions.cum <- Reduce('+', bl.predictions) + offset
       return(predictions.cum)
     }
 
@@ -374,7 +388,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
                }
         )
       predictions.none <- Reduce('+', bl.predictions)
-      predictions.none[, 1] <- predictions.none[, 1] + stats::quantile(y, offset)
+      predictions.none[, 1] <- predictions.none[, 1] + offset
       return(predictions.none)
     }
 

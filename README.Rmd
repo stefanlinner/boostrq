@@ -47,8 +47,7 @@ boosted.rq <-
     data = mtcars, 
     mstop = 200, 
     nu = 0.1, 
-    tau = 0.5, 
-    offset = 0.5
+    tau = 0.5
   )
 
 ### Get some basic information about your model 

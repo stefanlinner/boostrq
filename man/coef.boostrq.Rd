@@ -33,8 +33,7 @@ boostrq(
  data = mtcars,
  mstop = 200,
  nu = 0.1,
- tau = 0.5,
- offset = 0.5
+ tau = 0.5
 )
 
 coef(boosted.rq, aggregate = "cumsum")

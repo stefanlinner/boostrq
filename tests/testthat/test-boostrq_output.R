@@ -16,6 +16,7 @@ boosted.rq.100 <- boostrq(
   mstop = 100
 )
 
+
 test_that("output format of boostrq is correct", {
 
   testthat::expect_s3_class(boosted.rq.0, "boostrq")
@@ -89,17 +90,6 @@ test_that("coefficient output is correct", {
   testthat::expect_output(str(coefficients.none.100$`brq(am)`), "num [1:100, 1:2]", fixed = TRUE)
   testthat::expect_output(str(coefficients.none.100$`brq(cyl * hp)`), "num [1:100, 1:4]", fixed = TRUE)
 
-
-  # testthat::expect_snapshot(coefficients.sum.0)
-  # testthat::expect_snapshot(coefficients.cumsum.0)
-  # testthat::expect_snapshot(coefficients.none.0)
-  # testthat::expect_snapshot(coefficients.sum.1)
-  # testthat::expect_snapshot(coefficients.cumsum.1)
-  # testthat::expect_snapshot(coefficients.none.1)
-  # testthat::expect_snapshot(coefficients.sum.100)
-  # testthat::expect_snapshot(coefficients.cumsum.100)
-  # testthat::expect_snapshot(coefficients.none.100)
-
 })
 
 
@@ -125,12 +115,6 @@ test_that("prediction output is correct", {
   testthat::expect_output(str(boosted.rq.1$predict(newdata = newdat.2, aggregate = "sum")), "num [1:32, 1]", fixed = TRUE)
   testthat::expect_output(str(boosted.rq.1$predict(newdata = newdat.3, aggregate = "sum")), "num [1:32, 1]", fixed = TRUE)
 
-  # testthat::expect_snapshot(boosted.rq.1$predict(newdata = newdat.1, aggregate = "sum"))
-  # testthat::expect_snapshot(boosted.rq.1$predict(newdata = newdat.1, aggregate = "cumsum"))
-  # testthat::expect_snapshot(boosted.rq.1$predict(newdata = newdat.1, aggregate = "none"))
-  # testthat::expect_snapshot(boosted.rq.1$predict(newdata = newdat.1, aggregate = "sum", which = "brq(am)"))
-  # testthat::expect_snapshot(boosted.rq.1$predict(newdata = newdat.1, aggregate = "sum", which = "brq(cyl * hp)"))
-
 
   testthat::expect_output(str(boosted.rq.100$predict(newdata = newdat.1, aggregate = "sum")), "num [1:32, 1]", fixed = TRUE)
   testthat::expect_output(str(boosted.rq.100$predict(newdata = newdat.1, aggregate = "cumsum")), "num [1:32, 1:100]", fixed = TRUE)
@@ -138,11 +122,6 @@ test_that("prediction output is correct", {
   testthat::expect_output(str(boosted.rq.100$predict(newdata = newdat.2, aggregate = "sum")), "num [1:32, 1]", fixed = TRUE)
   testthat::expect_output(str(boosted.rq.100$predict(newdata = newdat.3, aggregate = "sum")), "num [1:32, 1]", fixed = TRUE)
 
-  # testthat::expect_snapshot(boosted.rq.100$predict(newdata = newdat.1, aggregate = "sum"))
-  # testthat::expect_snapshot(boosted.rq.100$predict(newdata = newdat.1, aggregate = "cumsum"))
-  # testthat::expect_snapshot(boosted.rq.100$predict(newdata = newdat.1, aggregate = "none"))
-  # testthat::expect_snapshot(boosted.rq.100$predict(newdata = newdat.1, aggregate = "cumsum", which = "brq(am)"))
-  # testthat::expect_snapshot(boosted.rq.100$predict(newdata = newdat.1, aggregate = "none", which = "brq(cyl * hp)"))
 
 })
 

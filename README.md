@@ -43,8 +43,7 @@ boosted.rq <-
     data = mtcars, 
     mstop = 200, 
     nu = 0.1, 
-    tau = 0.5, 
-    offset = 0.5
+    tau = 0.5
   )
 
 ### Get some basic information about your model 
@@ -63,7 +62,7 @@ boosted.rq$baselearner.names # names of the baselearners
 
 boosted.rq$call # the model call
 #> boostrq(formula = mpg ~ brq(cyl * hp) + brq(am + wt), data = mtcars, 
-#>     mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#>     mstop = 200, nu = 0.1, tau = 0.5)
 
 boosted.rq$mstop() # current number of iterations
 #> [1] 200
@@ -77,7 +76,7 @@ boosted.rq
 #> 
 #>   Boosting Regression Qauntiles
 #> 
-#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am + wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5, offset = 0.5)
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am + wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5)
 #> formula: mpg ~ brq(cyl * hp) + brq(am + wt)
 #> 
 #> 

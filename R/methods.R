@@ -22,8 +22,7 @@
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' coef(boosted.rq, aggregate = "cumsum")
@@ -59,8 +58,7 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' fitted(boosted.rq)
@@ -97,8 +95,7 @@ fitted.boostrq <- function(object, ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' boosted.rq
@@ -148,8 +145,7 @@ print.boostrq <- function(x, ...){
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' residuals(boosted.rq)
@@ -188,8 +184,7 @@ residuals.boostrq <- function(object, ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' boosted.rq[500]
@@ -222,8 +217,7 @@ residuals.boostrq <- function(object, ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' mstop(boosted.rq)
@@ -250,8 +244,7 @@ mstop <- function(object, ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' mstop(boosted.rq)
@@ -282,8 +275,7 @@ mstop.boostrq <- function(object, ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' mstop(boosted.rq) <- 500
@@ -323,8 +315,7 @@ mstop.boostrq <- function(object, ...) {
 #'  data = mtcars,
 #'  mstop = 200,
 #'  nu = 0.1,
-#'  tau = 0.5,
-#'  offset = 0.5
+#'  tau = 0.5
 #' )
 #'
 #' predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1, wt = 3.125)
@@ -359,8 +350,7 @@ predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "s
 #  data = mtcars,
 #  mstop = 200,
 #  nu = 0.1,
-#  tau = 0.5,
-#  offset = 0.5
+#  tau = 0.5
 # )
 #' #' resid(boosted.rq)
 #' resid.boostrq <- function(object, ...) {

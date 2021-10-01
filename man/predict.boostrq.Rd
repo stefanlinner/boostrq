@@ -36,8 +36,7 @@ boostrq(
  data = mtcars,
  mstop = 200,
  nu = 0.1,
- tau = 0.5,
- offset = 0.5
+ tau = 0.5
 )
 
 predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1, wt = 3.125)
