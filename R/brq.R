@@ -11,8 +11,6 @@
 #' @return brq returns a string, which is used to specifiy the formula in the fitting process.
 #' @export
 #'
-#' @import checkmate
-#'
 #' @examples brq(cyl * hp)
 brq <- function(formula, method = "fn") {
 

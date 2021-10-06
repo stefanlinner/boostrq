@@ -16,7 +16,8 @@ LazyData: true
 Imports: 
     quantreg (>= 5.86), 
     checkmate (>= 2.0.0), 
-    stats (>= 4.1.0)
+    stats (>= 4.1.0), 
+    mboost (>= 2.9-5)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Suggests: 

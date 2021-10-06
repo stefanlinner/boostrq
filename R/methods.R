@@ -13,8 +13,6 @@
 #' @return coef extracts the regression coefficients of the fitted boostrq model.
 #' @export
 #'
-#' @import checkmate
-#'
 #' @examples
 #' boosted.rq <-
 #' boostrq(
@@ -48,8 +46,6 @@ coef.boostrq <- function(object, which = NULL, aggregate = "sum", ...) {
 #'
 #' @return fitted returns the fitted values of the fitted boostrq model.
 #' @export
-#'
-#' @import checkmate
 #'
 #' @examples
 #' boosted.rq <-
@@ -86,7 +82,6 @@ fitted.boostrq <- function(object, ...) {
 #' @return print shows a dense representation of the boostrq model fit.
 #' @export
 #'
-#' @import checkmate
 #'
 #' @examples
 #' boosted.rq <-
@@ -136,8 +131,6 @@ print.boostrq <- function(x, ...){
 #' @return residuals returns the residuals of the fitted boostrq model.
 #' @export
 #'
-#' @import checkmate
-#'
 #' @examples
 #' boosted.rq <-
 #' boostrq(
@@ -174,8 +167,6 @@ residuals.boostrq <- function(object, ...) {
 #'
 #' @return a boostrq object with the updated number of iterations
 #' @export
-#'
-#' @import checkmate
 #'
 #' @examples
 #' boosted.rq <-
@@ -235,8 +226,6 @@ mstop <- function(object, ...) {
 #' @return current number of boosting iterations
 #' @export
 #'
-#' @import checkmate
-#'
 #' @examples
 #' boosted.rq <-
 #' boostrq(
@@ -265,8 +254,6 @@ mstop.boostrq <- function(object, ...) {
 #'
 #' @return a boostrq object with the updated number of iterations
 #' @export
-#'
-#' @import checkmate
 #'
 #' @examples
 #' boosted.rq <-
@@ -306,8 +293,6 @@ mstop.boostrq <- function(object, ...) {
 #' @return predictions for the new data
 #' @export
 #'
-#' @import checkmate
-#'
 #' @examples
 #' boosted.rq <-
 #' boostrq(
@@ -340,8 +325,6 @@ predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "s
 #' #'
 #' #' @return
 #' #' @export
-#' #'
-#' #' @import checkmate
 #' #'
 #' #' @examples
 # boosted.rq <-

@@ -12,8 +12,6 @@
 #' @param digits number of digits the slope parameter different from zero to be
 #' considered the best-fitting component, as integer.
 #'
-#' @import quantreg checkmate
-#' @importFrom stats terms as.formula model.matrix na.omit quantile model.frame
 #'
 #' @return A (generalized) additive quantile regression model is fitted using
 #' the boosting regression quantiles algorithm, which is a functional component-wise
@@ -128,9 +126,7 @@ boostrq <- function(formula, data = NULL, mstop = 100, nu = 0.1, tau = 0.5, offs
   if(is.null(offset)){
     offset <- stats::quantile(y, tau)
     fit <- rep(offset, length(y))
-  }
-
-  if(!is.null(offset)){
+  } else {
     fit <- offset
     if(length(unique(offset)) == 1){
       offset <- offset[1]
