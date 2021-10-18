@@ -2,20 +2,18 @@
 % Please edit documentation in R/methods.R
 \name{mstop}
 \alias{mstop}
-\title{s3 method class for 'boostrq'}
+\title{Current number of iterations of boostrq}
 \usage{
-mstop(object, ...)
+mstop(object)
 }
 \arguments{
 \item{object}{a boostrq object}
-
-\item{...}{additional arguments passed to callies}
 }
 \value{
 current number of boosting iterations
 }
 \description{
-s3 method class for 'boostrq'
+Current number of iterations of boostrq
 }
 \examples{
 boosted.rq <-

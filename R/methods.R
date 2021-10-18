@@ -193,35 +193,10 @@ residuals.boostrq <- function(object, ...) {
 }
 
 
-#' s3 method class for 'boostrq'
-#'
-#' @param object a boostrq object
-#' @param ... additional arguments passed to callies
-#'
-#' @return current number of boosting iterations
-#' @export
-#'
-#' @examples
-#' boosted.rq <-
-#' boostrq(
-#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
-#'  data = mtcars,
-#'  mstop = 200,
-#'  nu = 0.1,
-#'  tau = 0.5
-#' )
-#'
-#' mstop(boosted.rq)
-#'
-mstop <- function(object, ...) {
-  UseMethod("mstop")
-}
-
 
 #' Current number of iterations of boostrq
 #'
 #' @param object a boostrq object
-#' @param ... additional arguments passed to callies
 #'
 #' @return current number of boosting iterations
 #' @export
@@ -238,7 +213,7 @@ mstop <- function(object, ...) {
 #'
 #' mstop(boosted.rq)
 #'
-mstop.boostrq <- function(object, ...) {
+mstop <- function(object) {
 
   checkmate::assert_class(object, "boostrq")
 
@@ -315,39 +290,6 @@ predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "s
 
 }
 
-
-
-
-#' #' residuals of boosting regression quantiles
-#' #'
-#' #' @param object object of class boostrq
-#' #' @param ... additional arguments passed to callies
-#' #'
-#' #' @return
-#' #' @export
-#' #'
-#' #' @examples
-# boosted.rq <-
-# boostrq(
-#  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
-#  data = mtcars,
-#  mstop = 200,
-#  nu = 0.1,
-#  tau = 0.5
-# )
-#' #' resid(boosted.rq)
-#' resid.boostrq <- function(object, ...) {
-#'
-#'   checkmate::assert_class(object, "boostrq")
-#'
-#'   args <- list(...)
-#'   if (length(args) > 0) {
-#'     warning("Arguments ", paste(names(args), sep = ", "), " unknown")
-#'   }
-#'
-#'   object$resid()
-#'
-#' }
 
 
 # summary.boostrq <- function(object, ...)
