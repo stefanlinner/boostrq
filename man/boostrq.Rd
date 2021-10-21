@@ -11,7 +11,8 @@ boostrq(
   nu = 0.1,
   tau = 0.5,
   offset = NULL,
-  digits = 10
+  digits = 10,
+  exact.fit = FALSE
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ boostrq(
 
 \item{digits}{number of digits the slope parameter different from zero to be
 considered the best-fitting component, as integer.}
+
+\item{exact.fit}{logical, if set to TRUE the negative gradients of exact fits are set to 0.}
 }
 \value{
 A (generalized) additive quantile regression model is fitted using
