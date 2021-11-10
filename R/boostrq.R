@@ -81,7 +81,7 @@ boostrq <-
     checkmate::assert_character(baselearner, any.missing = FALSE, pattern = "^(brq\\(|brqss\\().+\\)$")
 
     if(any(is.na(data))){
-      warning("Data contains missing values. Missing values are removed for each baselearner seperately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
+      warning("Data contains missing values. Missing values are removed for each baselearner separately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
     }
 
     ### Removing observations, where response value is NA
@@ -180,8 +180,7 @@ boostrq <-
 
         ### Determining the best fitting component
         ### HUHU: Denk nochmal über die Genze 10te Nachkommastelle nach...
-        ### HUHU: Nicht eher any?
-        if(all(abs(round(qr.res[[best.baselearner]]$coef[-1], digits)) > 0)){
+        if(any(abs(round(qr.res[[best.baselearner]]$coef[-1], digits)) > 0)){
           appearances[m] <<- which.min(bl.risk)
         } else {
           appearances[m] <<- 0
