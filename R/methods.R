@@ -292,10 +292,78 @@ predict.boostrq <- function(object, newdata = NULL, which = NULL, aggregate = "s
 
 
 
-# summary.boostrq <- function(object, ...)
-# print.summary.boostrq <- function(x, ...)
+#' Result summaries for a boostrq object
+#'
+#' @param object a boostrq object
+#' @param ... additional arguments passed to callies
+#'
+#' @return result summaries for a boostrq object including the print-information,
+#' estimated coefficients, and selection frequencies
+#' @export
+#'
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5
+#' )
+#'
+#' summary(boosted.rq)
+#'
+summary.boostrq <- function(object, ...) {
+
+  checkmate::assert_class(object, "boostrq")
+
+  ret <- list(
+    boostrq = object,
+    coefs = object$coef(aggregate = "sum"),
+    selection.freqs = object$selection.freqs()
+  )
+
+  class(ret) <- "summary.boostrq"
+  ret
+
+}
 
 
+#' Print result summaries for a boostrq object
+#'
+#' @param x a summary.boostrq object
+#' @param ... additional arguments passed to callies
+#'
+#' @return printing the result summaries for a boostrq object including the print-information,
+#' estimated coefficients, and selection frequencies
+#' @export
+#'
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5
+#' )
+#'
+#' summary(boosted.rq)
+#'
+print.summary.boostrq <- function(x, ...) {
 
+  checkmate::assert_class(x, "summary.boostrq")
+
+  print(x$boostrq)
+
+  cat("Estimated coefficients:\n")
+  print(x$coefs)
+  cat("\n")
+
+  cat("Selection frequencies:\n")
+  print(x$selection.freqs)
+  cat("\n")
+
+}
 
 

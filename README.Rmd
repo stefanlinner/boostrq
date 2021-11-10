@@ -78,7 +78,11 @@ boosted.rq$coef(aggregate = "sum") # also try aggregate = "cumsum" or "none"
 # or use
 coef(boosted.rq, aggregate = "sum")
 
+### Printing result summaries 
+summary(boosted.rq)
+
 ```
+
 ```{r, results='hide'}
 ### Have a look at the underlying baselearner model matrices
 boosted.rq$baselearner.matrix()

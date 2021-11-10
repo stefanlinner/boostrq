@@ -93,7 +93,7 @@ boosted.rq
 ### Selection frequency of each component
 boosted.rq$selection.freqs()
 #>     Intercept brq(cyl * hp)  brq(am + wt) 
-#>         0.385         0.345         0.270
+#>         0.025         0.645         0.330
 
 ### Estimated coefficients for current number of iterations
 boosted.rq$coef(aggregate = "sum") # also try aggregate = "cumsum" or "none"
@@ -122,6 +122,43 @@ coef(boosted.rq, aggregate = "sum")
 #> $offset
 #>  50% 
 #> 19.2
+
+### Printing result summaries 
+summary(boosted.rq)
+#> 
+#>   Boosting Regression Qauntiles
+#> 
+#> Call:  boostrq(formula = mpg ~ brq(cyl * hp) + brq(am + wt), data = mtcars,      mstop = 200, nu = 0.1, tau = 0.5)
+#> formula: mpg ~ brq(cyl * hp) + brq(am + wt)
+#> 
+#> 
+#>   Quantile Regression
+#> Loss Function: tau * (y - f) * ((y - f) > 0) +
+#>         (tau - 1) * (y - f) * ((y - f) <= 0)
+#> Negative Gradient: tau * ((y - f) > 0) + (tau - 1) * ((y - f) <= 0)
+#> 
+#> Number of boosting iterations: mstop = 200 
+#> Step size: = 0.1 
+#> Offset:  19.2 
+#> Number of baselearners:  2 
+#> 
+#> Estimated coefficients:
+#> $`brq(cyl * hp)`
+#> (Intercept)         cyl          hp      cyl:hp 
+#> 19.33792010 -2.47917356 -0.09859763  0.01061430 
+#> 
+#> $`brq(am + wt)`
+#> (Intercept)          am          wt 
+#>    3.133808    1.861487   -1.167737 
+#> 
+#> $offset
+#>  50% 
+#> 19.2 
+#> 
+#> 
+#> Selection frequencies:
+#>     Intercept brq(cyl * hp)  brq(am + wt) 
+#>         0.025         0.645         0.330
 ```
 
 ``` r
