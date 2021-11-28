@@ -122,7 +122,7 @@ boostrq <-
                    stats::as.formula(
                      paste(response, "~", x[["formula"]])
                    ),
-                   data = data.w)
+                   data = data)
                )
              }
       )
@@ -147,7 +147,7 @@ boostrq <-
     names(bl.risk) <- baselearner
 
     ### Setting up empty empirical risk vector
-    risk <- vector("numeric", length = mstop + 1)
+    emp.risk <- vector("numeric", length = mstop + 1)
 
     ### Defining intial fitted values
     if(is.null(offset)){
@@ -162,7 +162,12 @@ boostrq <-
       }
     }
 
-    risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
+    if(risk == "oobag" & any(!weights)){
+      fit.oob <- offset[!weights]
+      emp.risk[1] <- quantile.risk(y = data[[response]][!weights, ], f = fit.oob, tau = tau)
+    } else{
+      emp.risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
+    }
 
 
     ### Setting up counter variable
@@ -179,7 +184,7 @@ boostrq <-
         qr.res <-
           lapply(baselearner,
                  function(x) {
-                   qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
+                   qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]][weights, ], tau = tau, method = baselearer.out[[x]][["method"]])
                    bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
 
                    qreg
@@ -209,7 +214,12 @@ boostrq <-
         fit <<- fit + qr.res[[best.baselearner]]$fitted.values * nu
 
         ### Updating empirical quantile risk
-        risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
+        if(risk == "oobag" & any(!weights)){
+          fit.oob <<- fit.oob + (baselearer.model.matrix[[best.baselearner]][!weights, ] %*% qr.res[[best.baselearner]]$coefficients) * nu
+          emp.risk[m + 1] <<- quantile.risk(y = data[[response]][!weights, ], f = fit.oob, tau = tau)
+        } else{
+          emp.risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
+        }
 
       }
 
@@ -252,7 +262,7 @@ boostrq <-
 
     ### Current empirical quantile risk
     RETURN$risk <- function() {
-      risk[1:(count.m + 1)]
+      emp.risk[1:(count.m + 1)]
     }
 
     ### Current working residuals (negative gradients)
@@ -269,11 +279,20 @@ boostrq <-
       if(is.null(which)){
         which <- baselearner
       }
-      baselearer.model.matrix[which]
+
+      ret.model.matrix <-
+        lapply(which,
+               function(x){
+                 baselearer.model.matrix[[x]][weights, ]
+               }
+        )
+      names(ret.model.matrix) <- which
+
+      ret.model.matrix
 
     }
 
-    RETURN$update <- function(weights){
+    RETURN$update <- function(weights, risk){
 
       checkmate::assert_logical(weights, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
 
@@ -286,7 +305,8 @@ boostrq <-
         offset = offset,
         digits = digits,
         exact.fit = exact.fit,
-        weights = weights
+        weights = weights,
+        risk = risk
       )
 
     }
