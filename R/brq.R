@@ -15,7 +15,7 @@
 brq <- function(formula, method = "fn") {
 
   checkmate::assert_string(method)
-  checkmate::assert_subset(method, choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
+  checkmate::assert_choice(method, choices = c("br", "fn", "pfn", "sfn", "fnc", "conquer", "ppro", "lasso"))
 
   bl <- as.list(match.call(expand.dots = FALSE))[2][[1]]
   bl <- deparse(bl)

@@ -12,6 +12,11 @@
 #' @param digits number of digits the slope parameter different from zero to be
 #' considered the best-fitting component, as integer.
 #' @param exact.fit logical, if set to TRUE the negative gradients of exact fits are set to 0.
+#' @param weights (optional) a logical vector indicating which observations should
+#' be used in the fitting process (default: all observations are used).
+#' @param risk string indicating how the empirical risk should be computed for each boosting iteration.
+#' inbag leads to risks computed for the learning sample (i.e. weights = TRUE), oobag to risks based on
+#' the out-of-bag (all observations with weights = FALSE).
 #'
 #' @return A (generalized) additive quantile regression model is fitted using
 #' the boosting regression quantiles algorithm, which is a functional component-wise
@@ -46,16 +51,16 @@ boostrq <-
     nu = 0.1,
     tau = 0.5,
     offset = NULL,
+    weights = NULL,
+    risk = "inbag",
     digits = 10,
     exact.fit = FALSE
   ) {
 
-    mstop <- as.integer(mstop)
-    digits <- as.integer(digits)
 
     ### Asserting input parameters
-    checkmate::assert_integer(digits, lower = 1, len = 1)
-    checkmate::assert_integer(mstop, lower = 0, len = 1)
+    checkmate::assert_int(digits, lower = 1)
+    checkmate::assert_int(mstop, lower = 0)
     checkmate::assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
     checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
     checkmate::assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
@@ -65,6 +70,9 @@ boostrq <-
       combine = "or"
     )
     checkmate::assert_logical(exact.fit, any.missing = FALSE, len = 1)
+    checkmate::assert_logical(weights, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
+    checkmate::assert_string(risk)
+    checkmate::assert_choice(risk, c("inbag", "oobag"))
 
     ### Getting response variable name
     response <- all.vars(formula[[2]])
@@ -85,8 +93,16 @@ boostrq <-
     }
 
     ### Removing observations, where response value is NA
+
     data <- data[!is.na(data[[response]]), ]
-    y <- data[[response]]
+
+    ### Setting up weights
+    if(is.null(weights)){
+      weights <- rep(TRUE, nrow(data))
+    }
+
+    data.w <- data[weights, ]
+    y <- data.w[[response]]
 
     ### Evaluating baselearner functions (brq() and brqss())
     baselearer.out <-
@@ -106,7 +122,7 @@ boostrq <-
                    stats::as.formula(
                      paste(response, "~", x[["formula"]])
                    ),
-                   data = data)
+                   data = data.w)
                )
              }
       )
@@ -135,16 +151,19 @@ boostrq <-
 
     ### Defining intial fitted values
     if(is.null(offset)){
-      offset <- stats::quantile(y, tau)
-      fit <- rep(offset, length(y))
+      offset.w <- stats::quantile(y, tau)
+      offset <- rep(offset.w, nrow(data))
+      fit <- rep(offset.w, length(y))
     } else {
-      fit <- offset
-      if(length(unique(offset)) == 1){
-        offset <- offset[1]
+      offset.w <- offset[weights]
+      fit <- offset.w
+      if(length(unique(offset.w)) == 1){
+        offset.w <- offset.w[1]
       }
     }
 
     risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
+
 
     ### Setting up counter variable
     count.m <- 0
@@ -208,7 +227,7 @@ boostrq <-
     RETURN <- list(
       formula = formula,
       nu = nu,
-      offset = offset,
+      offset = offset.w,
       baselearner.names = baselearner,
       call = match.call()
     )
@@ -254,6 +273,24 @@ boostrq <-
 
     }
 
+    RETURN$update <- function(weights){
+
+      checkmate::assert_logical(weights, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
+
+      boostrq(
+        formula = formula,
+        data = data,
+        mstop = count.m,
+        nu = nu,
+        tau = tau,
+        offset = offset,
+        digits = digits,
+        exact.fit = exact.fit,
+        weights = weights
+      )
+
+    }
+
     ### Current coefficient estimates
     RETURN$coef <- function(which = NULL, aggregate = "sum") {
 
@@ -267,7 +304,7 @@ boostrq <-
       }
 
       if(count.m == 0) {
-        return(list(offset = offset))
+        return(list(offset = offset.w))
       }
 
       if(aggregate == "none" & count.m > 0){
@@ -277,7 +314,7 @@ boostrq <-
                                 }
         )
         names(coefpath.none) <- which
-        coefpath.none$offset <- offset
+        coefpath.none$offset <- offset.w
         return(coefpath.none)
       }
 
@@ -288,7 +325,7 @@ boostrq <-
                                }
         )
         names(coefpath.sum) <- which
-        coefpath.sum$offset <- offset
+        coefpath.sum$offset <- offset.w
         return(coefpath.sum)
       }
 
@@ -303,7 +340,7 @@ boostrq <-
                                   }
         )
         names(coefpath.cumsum) <- which
-        coefpath.cumsum$offset <- offset
+        coefpath.cumsum$offset <- offset.w
         return(coefpath.cumsum)
       }
 
@@ -313,8 +350,8 @@ boostrq <-
     RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
       checkmate::assert(
-        checkmate::check_data_frame(data, min.rows = 1, min.cols = 2, col.names = "named"),
-        checkmate::check_data_table(data, min.rows = 1, min.cols = 2, col.names = "named"),
+        checkmate::check_data_frame(newdata, min.rows = 1, min.cols = 2, col.names = "named"),
+        checkmate::check_data_table(newdata, min.rows = 1, min.cols = 2, col.names = "named"),
         combine = "or"
       )
       checkmate::assert_subset(c(response, covariates), choices = names(newdata), empty.ok = FALSE)
@@ -346,11 +383,11 @@ boostrq <-
       names(newdata.model.matrix) <- which
 
       if(count.m == 0) {
-        if(length(offset) == 1){
-          predictions <- rep(offset, length(y))
+        if(length(offset.w) == 1){
+          predictions <- rep(offset.w, length(y))
         }
-        if(length(offset) > 1){
-          predictions <- offset
+        if(length(offset.w) > 1){
+          predictions <- offset.w
         }
         names(predictions) <- NULL
         return(predictions)
@@ -363,7 +400,7 @@ boostrq <-
                    newdata.model.matrix[[x]] %*% RETURN$coef(which = which, aggregate = aggregate)[[x]]
                  }
           )
-        predictions <- Reduce('+', bl.predictions) + offset
+        predictions <- Reduce('+', bl.predictions) + offset.w
         return(predictions)
       }
 
@@ -378,7 +415,7 @@ boostrq <-
                    )
                  }
           )
-        predictions.cum <- Reduce('+', bl.predictions) + offset
+        predictions.cum <- Reduce('+', bl.predictions) + offset.w
         return(predictions.cum)
       }
 
@@ -394,7 +431,7 @@ boostrq <-
                  }
           )
         predictions.none <- Reduce('+', bl.predictions)
-        predictions.none[, 1] <- predictions.none[, 1] + offset
+        predictions.none[, 1] <- predictions.none[, 1] + offset.w
         return(predictions.none)
       }
 
@@ -403,20 +440,19 @@ boostrq <-
     ### Update to a new number of boosting iterations mstop (without refitting the whole model)
     RETURN$subset <- function(i) {
 
-      i <- as.integer(i)
 
-      checkmate::assert_integer(i, lower = 0, any.missing = FALSE, len = 1)
+      checkmate::assert_int(i, lower = 0)
 
       if(i <= count.m || i <= length(appearances)) {
         if(i != count.m){
           count.m <<- i
-          fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
+          fit <<- RETURN$predict(newdata = data.w, which = NULL, aggregate = "sum")
         }
       } else {
         ### if prior reduction of count.m, first increase count.m to old value
         if(count.m != length(appearances)) {
           count.m <<- length(appearances)
-          fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
+          fit <<- RETURN$predict(newdata = data.w, which = NULL, aggregate = "sum")
         }
         coefpath <<-
           lapply(baselearner,
