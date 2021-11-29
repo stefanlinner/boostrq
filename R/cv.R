@@ -30,8 +30,8 @@ cvkrisk.boostrq <- function(object, k = 5, grid = 0:mstop(object)) {
   oobrisk <- matrix(0, nrow = ncol(folds), ncol = length(grid))
 
 
-  dummyfct <- function(weights, risk) {
-    mod <- fitfct(weights = weights, risk)
+  dummyfct <- function(index, risk) {
+    mod <- fitfct(index = index, risk)
     mstop(mod) <- max(grid)
 
     mod$risk()[grid + 1]

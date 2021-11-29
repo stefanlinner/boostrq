@@ -12,11 +12,11 @@
 #' @param digits number of digits the slope parameter different from zero to be
 #' considered the best-fitting component, as integer.
 #' @param exact.fit logical, if set to TRUE the negative gradients of exact fits are set to 0.
-#' @param weights (optional) a logical vector indicating which observations should
+#' @param index (optional) a index vector indicating which observations should
 #' be used in the fitting process (default: all observations are used).
 #' @param risk string indicating how the empirical risk should be computed for each boosting iteration.
-#' inbag leads to risks computed for the learning sample (i.e. weights = TRUE), oobag to risks based on
-#' the out-of-bag (all observations with weights = FALSE).
+#' inbag leads to risks computed for the learning sample (i.e. observations contained in index vector),
+#' oobag to risks based on the out-of-bag (i.e. all observations not in the index vector).
 #'
 #' @return A (generalized) additive quantile regression model is fitted using
 #' the boosting regression quantiles algorithm, which is a functional component-wise
@@ -51,12 +51,11 @@ boostrq <-
     nu = 0.1,
     tau = 0.5,
     offset = NULL,
-    weights = NULL,
+    index = NULL,
     risk = "inbag",
     digits = 10,
     exact.fit = FALSE
   ) {
-
 
     ### Asserting input parameters
     checkmate::assert_int(digits, lower = 1)
@@ -70,9 +69,13 @@ boostrq <-
       combine = "or"
     )
     checkmate::assert_logical(exact.fit, any.missing = FALSE, len = 1)
-    checkmate::assert_logical(weights, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
+    checkmate::assert_integerish(index, lower = 1, any.missing = FALSE, null.ok = TRUE, min.len = 1, max.len = nrow(data))
     checkmate::assert_string(risk)
     checkmate::assert_choice(risk, c("inbag", "oobag"))
+
+
+    ### HUHU: Stelle Regeln für risk und index auf!!
+
 
     ### Getting response variable name
     response <- all.vars(formula[[2]])
@@ -96,13 +99,15 @@ boostrq <-
 
     data <- data[!is.na(data[[response]]), ]
 
-    ### Setting up weights
-    if(is.null(weights)){
-      weights <- rep(TRUE, nrow(data))
+    ### Setting up index
+    if(is.null(index)){
+      index <- 1:nrow(data)
+    } else {
+      index <- setdiff(index, which(is.na(data[[response]])))
     }
 
-    data.w <- data[weights, ]
-    y <- data.w[[response]]
+    data.ind <- data[index, ]
+    y <- data.ind[[response]]
 
     ### Evaluating baselearner functions (brq() and brqss())
     baselearer.out <-
@@ -151,21 +156,21 @@ boostrq <-
 
     ### Defining intial fitted values
     if(is.null(offset)){
-      offset.w <- stats::quantile(y, tau)
-      offset <- rep(offset.w, nrow(data))
-      fit <- rep(offset.w, length(y))
+      offset.ind <- stats::quantile(y, tau)
+      offset <- rep(offset.ind, nrow(data))
+      fit <- rep(offset.ind, length(y))
     } else {
-      offset.w <- offset[weights]
-      fit <- offset.w
-      if(length(unique(offset.w)) == 1){
-        offset.w <- offset.w[1]
+      offset.ind <- offset[index]
+      fit <- offset.ind
+      if(length(unique(offset.ind)) == 1){
+        offset.ind <- offset.ind[1]
       }
     }
 
-    if(risk == "oobag" & any(!weights)){
-      fit.oob <- offset[!weights]
-      emp.risk[1] <- quantile.risk(y = data[[response]][!weights, ], f = fit.oob, tau = tau)
-    } else{
+    if(risk == "oobag" & length(index) < nrow(data)){
+      fit.oob <- offset[-index]
+      emp.risk[1] <- quantile.risk(y = data[[response]][-index, ], f = fit.oob, tau = tau)
+    } else {
       emp.risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
     }
 
@@ -184,7 +189,7 @@ boostrq <-
         qr.res <-
           lapply(baselearner,
                  function(x) {
-                   qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]][weights, ], tau = tau, method = baselearer.out[[x]][["method"]])
+                   qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]][index, ], tau = tau, method = baselearer.out[[x]][["method"]])
                    bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
 
                    qreg
@@ -214,10 +219,10 @@ boostrq <-
         fit <<- fit + qr.res[[best.baselearner]]$fitted.values * nu
 
         ### Updating empirical quantile risk
-        if(risk == "oobag" & any(!weights)){
-          fit.oob <<- fit.oob + (baselearer.model.matrix[[best.baselearner]][!weights, ] %*% qr.res[[best.baselearner]]$coefficients) * nu
-          emp.risk[m + 1] <<- quantile.risk(y = data[[response]][!weights, ], f = fit.oob, tau = tau)
-        } else{
+        if(risk == "oobag" & length(index) < nrow(data)){
+          fit.oob <<- fit.oob + (baselearer.model.matrix[[best.baselearner]][-index, ] %*% qr.res[[best.baselearner]]$coefficients) * nu
+          emp.risk[m + 1] <<- quantile.risk(y = data[[response]][-index, ], f = fit.oob, tau = tau)
+        } else {
           emp.risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
         }
 
@@ -237,7 +242,7 @@ boostrq <-
     RETURN <- list(
       formula = formula,
       nu = nu,
-      offset = offset.w,
+      offset = offset.ind,
       baselearner.names = baselearner,
       call = match.call()
     )
@@ -283,7 +288,7 @@ boostrq <-
       ret.model.matrix <-
         lapply(which,
                function(x){
-                 baselearer.model.matrix[[x]][weights, ]
+                 baselearer.model.matrix[[x]][index, ]
                }
         )
       names(ret.model.matrix) <- which
@@ -292,9 +297,9 @@ boostrq <-
 
     }
 
-    RETURN$update <- function(weights, risk){
+    RETURN$update <- function(index, risk){
 
-      checkmate::assert_logical(weights, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
+      checkmate::assert_integerish(index, lower = 1, any.missing = FALSE, null.ok = TRUE, min.len = 1, max.len = nrow(data))
 
       boostrq(
         formula = formula,
@@ -305,7 +310,7 @@ boostrq <-
         offset = offset,
         digits = digits,
         exact.fit = exact.fit,
-        weights = weights,
+        index = index,
         risk = risk
       )
 
@@ -324,7 +329,7 @@ boostrq <-
       }
 
       if(count.m == 0) {
-        return(list(offset = offset.w))
+        return(list(offset = offset.ind))
       }
 
       if(aggregate == "none" & count.m > 0){
@@ -334,7 +339,7 @@ boostrq <-
                                 }
         )
         names(coefpath.none) <- which
-        coefpath.none$offset <- offset.w
+        coefpath.none$offset <- offset.ind
         return(coefpath.none)
       }
 
@@ -345,7 +350,7 @@ boostrq <-
                                }
         )
         names(coefpath.sum) <- which
-        coefpath.sum$offset <- offset.w
+        coefpath.sum$offset <- offset.ind
         return(coefpath.sum)
       }
 
@@ -360,7 +365,7 @@ boostrq <-
                                   }
         )
         names(coefpath.cumsum) <- which
-        coefpath.cumsum$offset <- offset.w
+        coefpath.cumsum$offset <- offset.ind
         return(coefpath.cumsum)
       }
 
@@ -403,11 +408,11 @@ boostrq <-
       names(newdata.model.matrix) <- which
 
       if(count.m == 0) {
-        if(length(offset.w) == 1){
-          predictions <- rep(offset.w, length(y))
+        if(length(offset.ind) == 1){
+          predictions <- rep(offset.ind, length(y))
         }
-        if(length(offset.w) > 1){
-          predictions <- offset.w
+        if(length(offset.ind) > 1){
+          predictions <- offset.ind
         }
         names(predictions) <- NULL
         return(predictions)
@@ -420,7 +425,7 @@ boostrq <-
                    newdata.model.matrix[[x]] %*% RETURN$coef(which = which, aggregate = aggregate)[[x]]
                  }
           )
-        predictions <- Reduce('+', bl.predictions) + offset.w
+        predictions <- Reduce('+', bl.predictions) + offset.ind
         return(predictions)
       }
 
@@ -435,7 +440,7 @@ boostrq <-
                    )
                  }
           )
-        predictions.cum <- Reduce('+', bl.predictions) + offset.w
+        predictions.cum <- Reduce('+', bl.predictions) + offset.ind
         return(predictions.cum)
       }
 
@@ -451,7 +456,7 @@ boostrq <-
                  }
           )
         predictions.none <- Reduce('+', bl.predictions)
-        predictions.none[, 1] <- predictions.none[, 1] + offset.w
+        predictions.none[, 1] <- predictions.none[, 1] + offset.ind
         return(predictions.none)
       }
 
@@ -466,13 +471,13 @@ boostrq <-
       if(i <= count.m || i <= length(appearances)) {
         if(i != count.m){
           count.m <<- i
-          fit <<- RETURN$predict(newdata = data.w, which = NULL, aggregate = "sum")
+          fit <<- RETURN$predict(newdata = data.ind, which = NULL, aggregate = "sum")
         }
       } else {
         ### if prior reduction of count.m, first increase count.m to old value
         if(count.m != length(appearances)) {
           count.m <<- length(appearances)
-          fit <<- RETURN$predict(newdata = data.w, which = NULL, aggregate = "sum")
+          fit <<- RETURN$predict(newdata = data.ind, which = NULL, aggregate = "sum")
         }
         coefpath <<-
           lapply(baselearner,

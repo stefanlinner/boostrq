@@ -11,7 +11,7 @@ boostrq(
   nu = 0.1,
   tau = 0.5,
   offset = NULL,
-  weights = NULL,
+  index = NULL,
   risk = "inbag",
   digits = 10,
   exact.fit = FALSE
@@ -30,12 +30,12 @@ boostrq(
 
 \item{offset}{a numeric vector used as offset.}
 
-\item{weights}{(optional) a logical vector indicating which observations should
+\item{index}{(optional) a index vector indicating which observations should
 be used in the fitting process (default: all observations are used).}
 
 \item{risk}{string indicating how the empirical risk should be computed for each boosting iteration.
-inbag leads to risks computed for the learning sample (i.e. weights = TRUE), oobag to risks based on
-the out-of-bag (all observations with weights = FALSE).}
+inbag leads to risks computed for the learning sample (i.e. observations contained in index vector),
+oobag to risks based on the out-of-bag (i.e. all observations not in the index vector).}
 
 \item{digits}{number of digits the slope parameter different from zero to be
 considered the best-fitting component, as integer.}

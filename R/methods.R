@@ -197,9 +197,12 @@ residuals.boostrq <- function(object, ...) {
 #' Current number of iterations of boostrq
 #'
 #' @param object a boostrq object
+#' @param ... additional arguments passed to callies
 #'
 #' @return current number of boosting iterations
 #' @export
+#'
+#' @import mboost
 #'
 #' @examples
 #' boosted.rq <-
@@ -213,7 +216,7 @@ residuals.boostrq <- function(object, ...) {
 #'
 #' mstop(boosted.rq)
 #'
-mstop <- function(object) {
+mstop.boostrq <- function(object, ...) {
 
   checkmate::assert_class(object, "boostrq")
 
@@ -221,34 +224,6 @@ mstop <- function(object) {
 
 }
 
-
-#' Updating number of iterations
-#'
-#' @param x a boostrq object
-#' @param value desired number of boosting iterations
-#'
-#' @return a boostrq object with the updated number of iterations
-#' @export
-#'
-#' @examples
-#' boosted.rq <-
-#' boostrq(
-#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
-#'  data = mtcars,
-#'  mstop = 200,
-#'  nu = 0.1,
-#'  tau = 0.5
-#' )
-#'
-#' mstop(boosted.rq) <- 500
-#'
-"mstop<-" <- function(x, value) {
-
-  checkmate::assert_class(x, "boostrq")
-
-  return(x[value, return = TRUE])
-
-}
 
 
 #' Model predictions for boosting regression quantiles
