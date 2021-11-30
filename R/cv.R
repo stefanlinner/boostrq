@@ -12,12 +12,11 @@
 #'
 cvkrisk.boostrq <- function(object, k = 5, grid = 0:mstop(object)) {
 
-  k <- as.integer(k)
   n <- length(object$resid())
 
   checkmate::assert_class(object, "boostrq")
-  checkmate::assert_integer(k, lower = 1, upper = n, any.missing = FALSE, len = 1)
-  checkmate::assert_numeric(grid, lower = 0, any.missing = FALSE)
+  checkmate::assert_int(k, lower = 1, upper = n)
+  checkmate::assert_integerish(grid, lower = 0, any.missing = FALSE)
 
   fl <- floor(n/k)
 

@@ -58,20 +58,21 @@ boostrq <-
   ) {
 
     ### Asserting input parameters
-    checkmate::assert_int(digits, lower = 1)
-    checkmate::assert_int(mstop, lower = 0)
-    checkmate::assert_numeric(nu, len = 1, upper = 1, lower = 0.00001)
-    checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
-    checkmate::assert_numeric(tau, len = 1, upper = 0.99999, lower = 0.00001)
+    checkmate::assert_formula(formula)
     checkmate::assert(
       checkmate::check_data_frame(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
       checkmate::check_data_table(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
       combine = "or"
     )
-    checkmate::assert_logical(exact.fit, any.missing = FALSE, len = 1)
+    checkmate::assert_int(mstop, lower = 0)
+    checkmate::assert_number(nu, upper = 1, lower = 0.00001)
+    checkmate::assert_number(tau, upper = 0.99999, lower = 0.00001)
+    checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
     checkmate::assert_integerish(index, lower = 1, any.missing = FALSE, null.ok = TRUE, min.len = 1, max.len = nrow(data))
     checkmate::assert_string(risk)
     checkmate::assert_choice(risk, c("inbag", "oobag"))
+    checkmate::assert_int(digits, lower = 1)
+    checkmate::assert_logical(exact.fit, any.missing = FALSE, len = 1)
 
 
     ### HUHU: Stelle Regeln für risk und index auf!!
@@ -82,6 +83,22 @@ boostrq <-
     checkmate::assert_string(response)
     checkmate::assert_choice(response, choices = names(data))
 
+    ### Checking for NA-Values in response and covariates
+    checkmate::assert_numeric(data[[response]], any.missing = FALSE, len = nrow(data))
+
+    if(any(is.na(data))){
+      warning("Data contains missing values. Missing values are removed for each baselearner separately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
+    }
+
+    ### Setting up index
+    if(is.null(index)){
+      index <- 1:nrow(data)
+    }
+
+    data.ind <- data[index, ]
+    y <- data.ind[[response]]
+
+
     ## Getting covariate names
     covariates <- all.vars(formula[[3]])
     checkmate::assert_character(covariates, all.missing = FALSE)
@@ -91,23 +108,7 @@ boostrq <-
     baselearner <- attr(stats::terms(formula), "term.labels")
     checkmate::assert_character(baselearner, any.missing = FALSE, pattern = "^(brq\\(|brqss\\().+\\)$")
 
-    if(any(is.na(data))){
-      warning("Data contains missing values. Missing values are removed for each baselearner separately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
-    }
 
-    ### Removing observations, where response value is NA
-
-    data <- data[!is.na(data[[response]]), ]
-
-    ### Setting up index
-    if(is.null(index)){
-      index <- 1:nrow(data)
-    } else {
-      index <- setdiff(index, which(is.na(data[[response]])))
-    }
-
-    data.ind <- data[index, ]
-    y <- data.ind[[response]]
 
     ### Evaluating baselearner functions (brq() and brqss())
     baselearer.out <-
@@ -300,6 +301,8 @@ boostrq <-
     RETURN$update <- function(index, risk){
 
       checkmate::assert_integerish(index, lower = 1, any.missing = FALSE, null.ok = TRUE, min.len = 1, max.len = nrow(data))
+      checkmate::assert_string(risk)
+      checkmate::assert_choice(risk, c("inbag", "oobag"))
 
       boostrq(
         formula = formula,
