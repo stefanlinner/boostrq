@@ -14,11 +14,13 @@ BugReports: https://github.com/stefanlinner/boostrq/issues
 Encoding: UTF-8
 LazyData: true
 Depends:
-    mboost (>= 2.9-5)
+    mboost (>= 2.9-5), 
+    stabs (>= 0.6-4),
+    stats (>= 4.1.0),
+    parallel (>= 4.1.0)
 Imports: 
     quantreg (>= 5.86), 
-    checkmate (>= 2.0.0), 
-    stats (>= 4.1.0)
+    checkmate (>= 2.0.0)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Suggests: 

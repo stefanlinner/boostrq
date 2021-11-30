@@ -342,3 +342,101 @@ print.summary.boostrq <- function(x, ...) {
 }
 
 
+
+
+#' Extract indices of selected base learners
+#'
+#' @param object a boostrq object
+#' @param ... additional arguments passed to callies
+#'
+#' @return an index vector indicating the selected base learner in each iteration
+#' @export
+#'
+#' @import stabs
+#'
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5
+#' )
+#'
+#' selected(boosted.rq)
+#'
+selected.boostrq <- function(object, ...) {
+
+  checkmate::assert_class(object, "boostrq")
+
+  object$xselect()
+
+}
+
+
+
+#' Update and Re-fit a boostrq model
+#'
+#' @param object a boostrq object
+#' @param index (optional) a index vector indicating which observations should
+#' be used in the fitting process (default: all observations are used).
+#' @param risk string indicating how the empirical risk should be computed for each boosting iteration.
+#' inbag leads to risks computed for the learning sample (i.e. observations contained in index vector),
+#' oobag to risks based on the out-of-bag (i.e. all observations not in the index vector).
+#' @param ... additional arguments passed to callies
+#'
+#' @return a re-fitted boostrq model
+#' @export
+#'
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5
+#' )
+#'
+#' update(boosted.rq, index = 1:15, risk = "oobag")
+#'
+update.boostrq <- function(object, index, risk, ...) {
+
+  checkmate::assert_class(object, "boostrq")
+
+  object$update(index = index, risk = risk)
+
+}
+
+
+#' Empirical Quantile Risk of boostrq Object
+#'
+#' @param object a boostrq object
+#' @param ... additional arguments passed to callies
+#'
+#' @return numeric vector containing the respective empirical quantile risk of the
+#' different boosting iterations.
+#' @export
+#'
+#' @import mboost
+#'
+#' @examples
+#' boosted.rq <-
+#' boostrq(
+#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  data = mtcars,
+#'  mstop = 200,
+#'  nu = 0.1,
+#'  tau = 0.5
+#' )
+#'
+#' risk(boosted.rq)
+#'
+risk.boostrq <- function(object, ...) {
+
+  checkmate::assert_class(object, "boostrq")
+
+  object$risk()
+
+}

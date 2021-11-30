@@ -170,7 +170,7 @@ boostrq <-
 
     if(risk == "oobag" & length(index) < nrow(data)){
       fit.oob <- offset[-index]
-      emp.risk[1] <- quantile.risk(y = data[[response]][-index, ], f = fit.oob, tau = tau)
+      emp.risk[1] <- quantile.risk(y = data[[response]][-index], f = fit.oob, tau = tau)
     } else {
       emp.risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
     }
@@ -222,7 +222,7 @@ boostrq <-
         ### Updating empirical quantile risk
         if(risk == "oobag" & length(index) < nrow(data)){
           fit.oob <<- fit.oob + (baselearer.model.matrix[[best.baselearner]][-index, ] %*% qr.res[[best.baselearner]]$coefficients) * nu
-          emp.risk[m + 1] <<- quantile.risk(y = data[[response]][-index, ], f = fit.oob, tau = tau)
+          emp.risk[m + 1] <<- quantile.risk(y = data[[response]][-index], f = fit.oob, tau = tau)
         } else {
           emp.risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
         }
