@@ -32,4 +32,6 @@ cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
 
 mstop(cvk.out)
 
+boosted.rq[mstop(cvk.out)]
+
 }

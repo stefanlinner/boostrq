@@ -12,11 +12,12 @@
 #' @param digits number of digits the slope parameter different from zero to be
 #' considered the best-fitting component, as integer.
 #' @param exact.fit logical, if set to TRUE the negative gradients of exact fits are set to 0.
-#' @param index (optional) a index vector indicating which observations should
-#' be used in the fitting process (default: all observations are used).
+#' @param weights (optional) a numeric vector indicating which weights to used in the fitting process
+#' (default: all observations are equally weighted, with 1).
 #' @param risk string indicating how the empirical risk should be computed for each boosting iteration.
-#' inbag leads to risks computed for the learning sample (i.e. observations contained in index vector),
-#' oobag to risks based on the out-of-bag (i.e. all observations not in the index vector).
+#' inbag leads to risks computed for the learning sample (i.e. observations with non-zero weights),
+#' oobag to risks based on the out-of-bag (i.e. observations with non-zero oobagweights).
+#' @param oobweights an additional vector of out-of-bag weights, which is used for the out-of-bag risk.
 #'
 #' @return A (generalized) additive quantile regression model is fitted using
 #' the boosting regression quantiles algorithm, which is a functional component-wise
@@ -46,12 +47,13 @@
 boostrq <-
   function(
     formula,
-    data = NULL,
+    data,
     mstop = 100,
     nu = 0.1,
     tau = 0.5,
     offset = NULL,
-    index = NULL,
+    weights = NULL,
+    oobweights = NULL,
     risk = "inbag",
     digits = 10,
     exact.fit = FALSE
@@ -60,44 +62,55 @@ boostrq <-
     ### Asserting input parameters
     checkmate::assert_formula(formula)
     checkmate::assert(
-      checkmate::check_data_frame(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
-      checkmate::check_data_table(data, all.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
+      checkmate::check_data_frame(data, any.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
+      checkmate::check_data_table(data, any.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
       combine = "or"
     )
     checkmate::assert_int(mstop, lower = 0)
     checkmate::assert_number(nu, upper = 1, lower = 0.00001)
     checkmate::assert_number(tau, upper = 0.99999, lower = 0.00001)
     checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
-    checkmate::assert_integerish(index, lower = 1, any.missing = FALSE, null.ok = TRUE, min.len = 1, max.len = nrow(data))
+    checkmate::assert_numeric(weights, lower = 0, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
+    checkmate::assert_numeric(oobweights, lower = 0, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
     checkmate::assert_string(risk)
     checkmate::assert_choice(risk, c("inbag", "oobag"))
     checkmate::assert_int(digits, lower = 1)
     checkmate::assert_logical(exact.fit, any.missing = FALSE, len = 1)
-
-
-    ### HUHU: Stelle Regeln für risk und index auf!!
-
 
     ### Getting response variable name
     response <- all.vars(formula[[2]])
     checkmate::assert_string(response)
     checkmate::assert_choice(response, choices = names(data))
 
-    ### Checking for NA-Values in response and covariates
+    ### Checking response
     checkmate::assert_numeric(data[[response]], any.missing = FALSE, len = nrow(data))
+    y <- data[[response]]
 
-    if(any(is.na(data))){
-      warning("Data contains missing values. Missing values are removed for each baselearner separately. As a result, the number of observations may differ between the baselearner.\nConsider removing the missing values.")
+    ### Setting up weights
+    if(is.null(weights)){
+      weights <- rep(1, nrow(data))
     }
 
-    ### Setting up index
-    if(is.null(index)){
-      index <- 1:nrow(data)
+    if(is.null(oobweights)){
+      oobweights <- as.numeric(weights == 0)
     }
 
-    data.ind <- data[index, ]
-    y <- data.ind[[response]]
+    ### Checking weights and oobweights
+    if(any(oobweights[weights > 0] > 0)){
+      stop("weights and oobweights must not both have non-zero weights for the same observations.")
+    }
 
+    if(any(weights[oobweights > 0] > 0)){
+      stop("weights and oobweights must not both have non-zero weights for the same observations.")
+    }
+
+    if(length(c(weights[weights > 0], oobweights[oobweights > 0])) != nrow(data)){
+      warning("at least one observation is neiter used for fitting nor for validation.")
+    }
+
+    if(risk == "oobag" & all(oobweights == 0)){
+      stop("In order to compute out-of-bag risk you cannot use all observations for the fitting process.\nPlease check your specification of arguments weights and oobweights.")
+    }
 
     ## Getting covariate names
     covariates <- all.vars(formula[[3]])
@@ -107,7 +120,6 @@ boostrq <-
     ### Getting baselearner names
     baselearner <- attr(stats::terms(formula), "term.labels")
     checkmate::assert_character(baselearner, any.missing = FALSE, pattern = "^(brq\\(|brqss\\().+\\)$")
-
 
 
     ### Evaluating baselearner functions (brq() and brqss())
@@ -157,23 +169,26 @@ boostrq <-
 
     ### Defining intial fitted values
     if(is.null(offset)){
-      offset.ind <- stats::quantile(y, tau)
-      offset <- rep(offset.ind, nrow(data))
-      fit <- rep(offset.ind, length(y))
+      offset <- stats::quantile(y, tau)
+      fit <- rep(offset, nrow(data))
     } else {
-      offset.ind <- offset[index]
-      fit <- offset.ind
-      if(length(unique(offset.ind)) == 1){
-        offset.ind <- offset.ind[1]
+      fit <- offset
+      if(length(unique(offset)) == 1){
+        offset <- offset[1]
       }
     }
 
-    if(risk == "oobag" & length(index) < nrow(data)){
-      fit.oob <- offset[-index]
-      emp.risk[1] <- quantile.risk(y = data[[response]][-index], f = fit.oob, tau = tau)
+    if(risk == "oobag"){
+      riskfct <- function(y, f) {
+        quantile.risk(y, f, tau, oobweights)
+      }
     } else {
-      emp.risk[1] <- quantile.risk(y = y, f = fit, tau = tau)
+      riskfct <- function(y, f) {
+        quantile.risk(y, f, tau, weights)
+      }
     }
+
+    emp.risk[1] <- riskfct(y = y, f = fit)
 
 
     ### Setting up counter variable
@@ -187,16 +202,30 @@ boostrq <-
         q.ngradient <- quantile.ngradient(y = y, f = fit, tau = tau, exact.fit = exact.fit)
 
         ### Estimating quantile regression models and determining empirical quantile risk for each baselearner
-        qr.res <-
-          lapply(baselearner,
-                 function(x) {
-                   qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]][index, ], tau = tau, method = baselearer.out[[x]][["method"]])
-                   bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau)
+        # HUHU: use mclapply (?)
+        if(all(weights == 1)){
+          qr.res <-
+            lapply(baselearner,
+                   function(x) {
+                     qreg <- quantreg::rq.fit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]])
+                     bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau, weights = weights)
 
-                   qreg
-                 }
-          )
-        names(qr.res) <- baselearner
+                     qreg
+                   }
+            )
+          names(qr.res) <- baselearner
+        } else {
+          qr.res <-
+            lapply(baselearner,
+                   function(x) {
+                     qreg <- quantreg::rq.wfit(y = q.ngradient, x = baselearer.model.matrix[[x]], tau = tau, method = baselearer.out[[x]][["method"]], weights = weights)
+                     bl.risk[x] <<- quantile.risk(y = q.ngradient, f = qreg$fitted.values, tau = tau, weights = weights)
+
+                     qreg
+                   }
+            )
+          names(qr.res) <- baselearner
+        }
 
         if(sum(bl.risk == min(bl.risk)) > 1){
           warning(paste("Warning: There is no unique best base learner in iteration", m))
@@ -220,12 +249,7 @@ boostrq <-
         fit <<- fit + qr.res[[best.baselearner]]$fitted.values * nu
 
         ### Updating empirical quantile risk
-        if(risk == "oobag" & length(index) < nrow(data)){
-          fit.oob <<- fit.oob + (baselearer.model.matrix[[best.baselearner]][-index, ] %*% qr.res[[best.baselearner]]$coefficients) * nu
-          emp.risk[m + 1] <<- quantile.risk(y = data[[response]][-index], f = fit.oob, tau = tau)
-        } else {
-          emp.risk[m + 1] <<- quantile.risk(y = y, f = fit, tau = tau)
-        }
+        emp.risk[m + 1] <<- riskfct(y = y, f = fit)
 
       }
 
@@ -243,9 +267,11 @@ boostrq <-
     RETURN <- list(
       formula = formula,
       nu = nu,
-      offset = offset.ind,
+      offset = offset,
       baselearner.names = baselearner,
-      call = match.call()
+      call = match.call(),
+      weights = weights,
+      oobweights = oobweights
     )
 
     ### Number of iterations run
@@ -286,23 +312,15 @@ boostrq <-
         which <- baselearner
       }
 
-      ret.model.matrix <-
-        lapply(which,
-               function(x){
-                 baselearer.model.matrix[[x]][index, ]
-               }
-        )
-      names(ret.model.matrix) <- which
-
-      ret.model.matrix
+      baselearer.model.matrix[which]
 
     }
 
-    RETURN$update <- function(index, risk){
+    RETURN$update <- function(weights, oobweights, risk){
 
-      checkmate::assert_integerish(index, lower = 1, any.missing = FALSE, null.ok = TRUE, min.len = 1, max.len = nrow(data))
-      checkmate::assert_string(risk)
-      checkmate::assert_choice(risk, c("inbag", "oobag"))
+      if(length(offset) == 1){
+        offset.vec <- rep(offset, length(y))
+      }
 
       boostrq(
         formula = formula,
@@ -310,10 +328,11 @@ boostrq <-
         mstop = count.m,
         nu = nu,
         tau = tau,
-        offset = offset,
+        offset = offset.vec,
         digits = digits,
         exact.fit = exact.fit,
-        index = index,
+        weights = weights,
+        oobweights = oobweights,
         risk = risk
       )
 
@@ -332,7 +351,7 @@ boostrq <-
       }
 
       if(count.m == 0) {
-        return(list(offset = offset.ind))
+        return(list(offset = offset))
       }
 
       if(aggregate == "none" & count.m > 0){
@@ -342,7 +361,7 @@ boostrq <-
                                 }
         )
         names(coefpath.none) <- which
-        coefpath.none$offset <- offset.ind
+        coefpath.none$offset <- offset
         return(coefpath.none)
       }
 
@@ -353,7 +372,7 @@ boostrq <-
                                }
         )
         names(coefpath.sum) <- which
-        coefpath.sum$offset <- offset.ind
+        coefpath.sum$offset <- offset
         return(coefpath.sum)
       }
 
@@ -368,7 +387,7 @@ boostrq <-
                                   }
         )
         names(coefpath.cumsum) <- which
-        coefpath.cumsum$offset <- offset.ind
+        coefpath.cumsum$offset <- offset
         return(coefpath.cumsum)
       }
 
@@ -411,11 +430,11 @@ boostrq <-
       names(newdata.model.matrix) <- which
 
       if(count.m == 0) {
-        if(length(offset.ind) == 1){
-          predictions <- rep(offset.ind, length(y))
+        if(length(offset) == 1){
+          predictions <- rep(offset, length(y))
         }
-        if(length(offset.ind) > 1){
-          predictions <- offset.ind
+        if(length(offset) > 1){
+          predictions <- offset
         }
         names(predictions) <- NULL
         return(predictions)
@@ -428,7 +447,7 @@ boostrq <-
                    newdata.model.matrix[[x]] %*% RETURN$coef(which = which, aggregate = aggregate)[[x]]
                  }
           )
-        predictions <- Reduce('+', bl.predictions) + offset.ind
+        predictions <- Reduce('+', bl.predictions) + offset
         return(predictions)
       }
 
@@ -443,7 +462,7 @@ boostrq <-
                    )
                  }
           )
-        predictions.cum <- Reduce('+', bl.predictions) + offset.ind
+        predictions.cum <- Reduce('+', bl.predictions) + offset
         return(predictions.cum)
       }
 
@@ -459,7 +478,7 @@ boostrq <-
                  }
           )
         predictions.none <- Reduce('+', bl.predictions)
-        predictions.none[, 1] <- predictions.none[, 1] + offset.ind
+        predictions.none[, 1] <- predictions.none[, 1] + offset
         return(predictions.none)
       }
 
@@ -474,13 +493,13 @@ boostrq <-
       if(i <= count.m || i <= length(appearances)) {
         if(i != count.m){
           count.m <<- i
-          fit <<- RETURN$predict(newdata = data.ind, which = NULL, aggregate = "sum")
+          fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
         }
       } else {
         ### if prior reduction of count.m, first increase count.m to old value
         if(count.m != length(appearances)) {
           count.m <<- length(appearances)
-          fit <<- RETURN$predict(newdata = data.ind, which = NULL, aggregate = "sum")
+          fit <<- RETURN$predict(newdata = data, which = NULL, aggregate = "sum")
         }
         coefpath <<-
           lapply(baselearner,

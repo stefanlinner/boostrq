@@ -4,17 +4,19 @@
 \alias{update.boostrq}
 \title{Update and Re-fit a boostrq model}
 \usage{
-\method{update}{boostrq}(object, index, risk, ...)
+\method{update}{boostrq}(object, weights, oobweights, risk, ...)
 }
 \arguments{
 \item{object}{a boostrq object}
 
-\item{index}{(optional) a index vector indicating which observations should
-be used in the fitting process (default: all observations are used).}
+\item{weights}{(optional) a numeric vector indicating which weights to used in the fitting process
+(default: all observations are equally weighted, with 1).}
+
+\item{oobweights}{an additional vector of out-of-bag weights, which is used for the out-of-bag risk.}
 
 \item{risk}{string indicating how the empirical risk should be computed for each boosting iteration.
-inbag leads to risks computed for the learning sample (i.e. observations contained in index vector),
-oobag to risks based on the out-of-bag (i.e. all observations not in the index vector).}
+inbag leads to risks computed for the learning sample (i.e. observations with non-zero weights),
+oobag to risks based on the out-of-bag (i.e. observations with non-zero oobagweights).}
 
 \item{...}{additional arguments passed to callies}
 }
@@ -34,6 +36,11 @@ boostrq(
  tau = 0.5
 )
 
-update(boosted.rq, index = 1:15, risk = "oobag")
+update(
+boosted.rq,
+weights = c(rep(1, 30), 0, 0),
+oobweights = c(rep(0, 30), 1,1),
+risk = "oobag"
+)
 
 }

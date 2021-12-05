@@ -41,6 +41,7 @@ boostrq(
  tau = 0.5
 )
 
+set.seed(101)
 cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
 
 }

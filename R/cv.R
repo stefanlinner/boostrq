@@ -23,6 +23,7 @@
 #'  tau = 0.5
 #' )
 #'
+#' set.seed(101)
 #' cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
 #'
 cvkrisk <- function(object, k = 5, grid = 0:mstop(object), papply = mclapply, mc.preschedule = FALSE) {
@@ -30,44 +31,45 @@ cvkrisk <- function(object, k = 5, grid = 0:mstop(object), papply = mclapply, mc
   checkmate::assert_class(object, "boostrq")
   n <- length(object$resid())
   call <- deparse(object$call)
+  weights <- object$weights
+
+  if (any(weights == 0)){
+    warning("zero weights")
+  }
 
   checkmate::assert_int(k, lower = 1, upper = n)
   checkmate::assert_integerish(grid, lower = 0, any.missing = FALSE)
   checkmate::assert_function(papply)
   checkmate::assert_logical(mc.preschedule, any.missing = FALSE, len = 1)
 
-
   fl <- floor(n/k)
 
   folds <- c(rep(c(rep(0, fl), rep(1, n)), k - 1),
              rep(0, n * k - (k - 1) * (fl + n)))
 
-  kfolds <- matrix(folds, nrow = n)[sample(1:n),, drop = FALSE]
-  index.kfolds <- lapply(seq_len(k),
-                         function(x){
-                           which(kfolds[, x] == 1)
-                         }
-  )
+  kfolds <- matrix(folds, nrow = n)[sample(1:n),, drop = FALSE] * weights
 
-
-  dummyfct <- function(index, risk) {
-    mod <- object$update(index = index, risk = risk)
+  dummyfct <- function(weights, oobweights, risk) {
+    mod <- object$update(weights = weights, oobweights = oobweights, risk = risk)
     mstop(mod) <- max(grid)
 
     mod$risk()[grid + 1]
   }
 
+  oobweights <- matrix(rep(weights, ncol(kfolds)), ncol = ncol(kfolds))
+  oobweights[kfolds > 0] <- 0
+
   if (identical(papply, mclapply)) {
-    oobrisk <- papply(index.kfolds,
+    oobrisk <- papply(seq_len(ncol(kfolds)),
                       FUN = function(x) {
-                        dummyfct(index = x, risk = "oobag")
+                        dummyfct(weights = kfolds[, x], oobweights = oobweights[, x], risk = "oobag")
                       },
                       mc.preschedule = mc.preschedule
     )
   } else {
-    oobrisk <- papply(index.kfolds,
+    oobrisk <- papply(seq_len(ncol(kfolds)),
                       FUN = function(x) {
-                        dummyfct(index = x, risk = "oobag")
+                        dummyfct(weights = kfolds[, x], oobweights = oobweights[, x], risk = "oobag")
                       }
     )
   }
@@ -88,7 +90,6 @@ cvkrisk <- function(object, k = 5, grid = 0:mstop(object), papply = mclapply, mc
   class(oobrisk.out) <- "cvkrisk"
 
   oobrisk.out
-
 
 }
 

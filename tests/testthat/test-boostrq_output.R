@@ -48,12 +48,12 @@ test_that("output format of boostrq is correct", {
   testthat::expect_s3_class(boosted.rq.up, "boostrq")
   testthat::expect_s3_class(boosted.rq.down, "boostrq")
 
-  testthat::expect_output(str(boosted.rq.0), "List of 17")
-  testthat::expect_output(str(boosted.rq.1), "List of 17")
-  testthat::expect_output(str(boosted.rq.100), "List of 17")
-  testthat::expect_output(str(boosted.rq.offset), "List of 17")
-  testthat::expect_output(str(boosted.rq.up), "List of 17")
-  testthat::expect_output(str(boosted.rq.down), "List of 17")
+  testthat::expect_output(str(boosted.rq.0), "List of 19")
+  testthat::expect_output(str(boosted.rq.1), "List of 19")
+  testthat::expect_output(str(boosted.rq.100), "List of 19")
+  testthat::expect_output(str(boosted.rq.offset), "List of 19")
+  testthat::expect_output(str(boosted.rq.up), "List of 19")
+  testthat::expect_output(str(boosted.rq.down), "List of 19")
 
   testthat::expect_equal(boosted.rq.up$mstop(), 200)
   testthat::expect_equal(boosted.rq.down$mstop(), 50)
