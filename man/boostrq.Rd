@@ -6,7 +6,7 @@
 \usage{
 boostrq(
   formula,
-  data = NULL,
+  data,
   mstop = 100,
   nu = 0.1,
   tau = 0.5,
