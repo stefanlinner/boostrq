@@ -6,16 +6,17 @@
 \usage{
 cvkrisk(
   object,
-  k = 5,
+  folds = cv.folds(object$weights),
   grid = 0:mstop(object),
   papply = mclapply,
-  mc.preschedule = FALSE
+  mc.preschedule = FALSE,
+  fun = NULL
 )
 }
 \arguments{
 \item{object}{a boostrq object}
 
-\item{k}{number of folds, per default 5}
+\item{folds}{a matrix indicating the weights for the k resampling iterations}
 
 \item{grid}{a vetor of stopping parameters the empirical quantile risk is to be evaluated for.}
 
@@ -24,6 +25,9 @@ cvkrisk(
 
 \item{mc.preschedule}{preschedule tasks if are parallelized using mclapply (default: FALSE)?
 For details see mclapply.}
+
+\item{fun}{if fun is NULL, the out-of-sample risk is returned. fun, as a function of object, may
+extract any other characteristic of the cross-validated models. These are returned as is.}
 }
 \value{
 crossvalidation object
@@ -42,6 +46,6 @@ boostrq(
 )
 
 set.seed(101)
-cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
+cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
 
 }

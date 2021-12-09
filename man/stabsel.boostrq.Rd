@@ -51,6 +51,13 @@ test
 test
 }
 \examples{
-test <- 1:3
+boosted.rq <-
+boostrq(
+ formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ data = mtcars,
+ mstop = 200,
+ nu = 0.1,
+ tau = 0.5
+)
 
 }

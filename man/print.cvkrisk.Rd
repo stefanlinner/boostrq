@@ -27,7 +27,7 @@ boostrq(
  tau = 0.5
 )
 
-cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
+cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
 
 cvk.out
 

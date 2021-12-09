@@ -1,12 +1,14 @@
 #' k-fold Crossvalidation for boostrq
 #'
 #' @param object a boostrq object
-#' @param k number of folds, per default 5
 #' @param grid a vetor of stopping parameters the empirical quantile risk is to be evaluated for.
 #' @param mc.preschedule preschedule tasks if are parallelized using mclapply (default: FALSE)?
 #' For details see mclapply.
 #' @param papply (parallel) apply function, defaults to mclapply. To run sequentially
 #' (i.e. not in parallel), one can use lapply.
+#' @param folds a matrix indicating the weights for the k resampling iterations
+#' @param fun if fun is NULL, the out-of-sample risk is returned. fun, as a function of object, may
+#' extract any other characteristic of the cross-validated models. These are returned as is.
 #'
 #' @return crossvalidation object
 #' @export
@@ -24,72 +26,120 @@
 #' )
 #'
 #' set.seed(101)
-#' cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
+#' cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
 #'
-cvkrisk <- function(object, k = 5, grid = 0:mstop(object), papply = mclapply, mc.preschedule = FALSE) {
+cvkrisk <-
+  function(
+    object,
+    folds = cv.folds(object$weights),
+    grid = 0:mstop(object),
+    papply = mclapply,
+    mc.preschedule = FALSE,
+    fun = NULL
+  ) {
 
-  checkmate::assert_class(object, "boostrq")
-  n <- length(object$resid())
-  call <- deparse(object$call)
-  weights <- object$weights
+    checkmate::assert_class(object, "boostrq")
+    call <- deparse(object$call)
+    weights <- object$weights
+    n <- length(weights)
 
-  if (any(weights == 0)){
-    warning("zero weights")
+    if (any(weights == 0)){
+      warning("zero weights")
+    }
+
+    checkmate::assert_matrix(folds, any.missing = FALSE, nrows = n)
+    checkmate::assert_integerish(grid, lower = 0, any.missing = FALSE)
+    checkmate::assert_function(papply)
+    checkmate::assert_logical(mc.preschedule, any.missing = FALSE, len = 1)
+    checkmate::assert_function(fun, null.ok = TRUE)
+
+    if (is.null(fun)) {
+      dummyfct <- function(weights, oobweights, risk) {
+        mod <- object$update(weights = weights, oobweights = oobweights, risk = risk)
+        mstop(mod) <- max(grid)
+
+        mod$risk()[grid + 1]
+      }
+    } else {
+      dummyfct <- function(weights, oobweights, risk) {
+        mod <- object$update(weights = weights, oobweights = oobweights, risk = risk)
+        mstop(mod) <- max(grid)
+
+        fun(mod)
+      }
+
+    }
+
+    oobweights <- matrix(rep(weights, ncol(folds)), ncol = ncol(folds))
+    oobweights[folds > 0] <- 0
+
+    if (identical(papply, mclapply)) {
+      oobrisk <- papply(seq_len(ncol(folds)),
+                        FUN = function(x) {
+                          dummyfct(weights = folds[, x], oobweights = oobweights[, x], risk = "oobag")
+                        },
+                        mc.preschedule = mc.preschedule
+      )
+    } else {
+      oobrisk <- papply(seq_len(ncol(folds)),
+                        FUN = function(x) {
+                          dummyfct(weights = folds[, x], oobweights = oobweights[, x], risk = "oobag")
+                        }
+      )
+    }
+
+    if (!is.null(fun)) {
+      return(oobrisk)
+    }
+
+    oobrisk <- matrix(unlist(oobrisk), nrow = length(grid), ncol = ncol(folds))
+    ## HUHU: /colSums(oobweights) ?! s. mboost cvrisk
+    oobrisk <- as.data.frame(oobrisk)
+    rownames(oobrisk) <- grid
+    colnames(oobrisk) <- 1:ncol(oobrisk)
+
+    oobrisk.out <-
+      list(
+        mstop = grid,
+        type = paste(ncol(folds), "-fold Crossvalidation", sep = ""),
+        call = call,
+        cvdata = oobrisk
+      )
+
+    class(oobrisk.out) <- "cvkrisk"
+
+    oobrisk.out
+
   }
 
-  checkmate::assert_int(k, lower = 1, upper = n)
-  checkmate::assert_integerish(grid, lower = 0, any.missing = FALSE)
-  checkmate::assert_function(papply)
-  checkmate::assert_logical(mc.preschedule, any.missing = FALSE, len = 1)
 
+#' Folds for k-fold crossvalidation
+#'
+#' @param weights a numeric vector indicating which weights to used for the single observations.
+#' @param k number of folds
+#'
+#' @return a matrix with k columns and n rows, each column indicates
+#' the weights for the respective resampling iteration.
+#' @export
+#'
+#' @examples
+#'
+#' folds <- cv.folds(rep(1,32), k = 5)
+#' folds
+#'
+cv.folds <- function(weights, k = 5) {
+
+  checkmate::assert_int(k, lower = 1)
+  checkmate::assert_numeric(weights, lower = 0, any.missing = FALSE, null.ok = TRUE)
+
+  n <- length(weights)
   fl <- floor(n/k)
 
   folds <- c(rep(c(rep(0, fl), rep(1, n)), k - 1),
              rep(0, n * k - (k - 1) * (fl + n)))
 
   kfolds <- matrix(folds, nrow = n)[sample(1:n),, drop = FALSE] * weights
-
-  dummyfct <- function(weights, oobweights, risk) {
-    mod <- object$update(weights = weights, oobweights = oobweights, risk = risk)
-    mstop(mod) <- max(grid)
-
-    mod$risk()[grid + 1]
-  }
-
-  oobweights <- matrix(rep(weights, ncol(kfolds)), ncol = ncol(kfolds))
-  oobweights[kfolds > 0] <- 0
-
-  if (identical(papply, mclapply)) {
-    oobrisk <- papply(seq_len(ncol(kfolds)),
-                      FUN = function(x) {
-                        dummyfct(weights = kfolds[, x], oobweights = oobweights[, x], risk = "oobag")
-                      },
-                      mc.preschedule = mc.preschedule
-    )
-  } else {
-    oobrisk <- papply(seq_len(ncol(kfolds)),
-                      FUN = function(x) {
-                        dummyfct(weights = kfolds[, x], oobweights = oobweights[, x], risk = "oobag")
-                      }
-    )
-  }
-
-  oobrisk <- matrix(unlist(oobrisk), nrow = length(grid), ncol = ncol(kfolds))
-  oobrisk <- as.data.frame(oobrisk)
-  rownames(oobrisk) <- grid
-  colnames(oobrisk) <- 1:ncol(oobrisk)
-
-  oobrisk.out <-
-    list(
-      mstop = grid,
-      type = paste(k, "-fold Crossvalidation", sep = ""),
-      call = call,
-      cvdata = oobrisk
-    )
-
-  class(oobrisk.out) <- "cvkrisk"
-
-  oobrisk.out
+  kfolds
 
 }
 
@@ -112,7 +162,7 @@ cvkrisk <- function(object, k = 5, grid = 0:mstop(object), papply = mclapply, mc
 #'  tau = 0.5
 #' )
 #'
-#' cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
+#' cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
 #'
 #' cvk.out
 #'
@@ -150,7 +200,7 @@ print.cvkrisk <- function(x, ...) {
 #'  tau = 0.5
 #' )
 #'
-#' cvk.out <- cvkrisk(boosted.rq, k = 5, grid = 0:mstop(boosted.rq))
+#' cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
 #'
 #' mstop(cvk.out)
 #'
