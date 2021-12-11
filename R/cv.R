@@ -1,4 +1,4 @@
-#' k-fold Crossvalidation for boostrq
+#' Crossvalidation for boostrq
 #'
 #' @param object a boostrq object
 #' @param grid a vetor of stopping parameters the empirical quantile risk is to be evaluated for.
@@ -9,11 +9,12 @@
 #' @param folds a matrix indicating the weights for the k resampling iterations
 #' @param fun if fun is NULL, the out-of-sample risk is returned. fun, as a function of object, may
 #' extract any other characteristic of the cross-validated models. These are returned as is.
+#' @param ... additional arguments passed to callies
 #'
-#' @return crossvalidation object
+#' @return Cross-validated Boosting regression quantiles
 #' @export
 #'
-#' @import parallel
+#' @import mboost parallel
 #'
 #' @examples
 #' boosted.rq <-
@@ -26,16 +27,31 @@
 #' )
 #'
 #' set.seed(101)
-#' cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
 #'
-cvkrisk <-
+#' cvk.out <-
+#' cvrisk(
+#'  boosted.rq,
+#'  grid = 0:mstop(boosted.rq),
+#'  folds = mboost::cv(boosted.rq$weights, type = "kfold", B = 5)
+#' )
+#'
+#' cvk.out
+#'
+#' plot(cvk.out)
+#'
+#' mstop(cvk.out)
+#'
+#' boosted.rq[mstop(cvk.out)]
+#'
+cvrisk.boostrq <-
   function(
     object,
-    folds = cv.folds(object$weights),
+    folds = mboost::cv(object$weights, type = "kfold"),
     grid = 0:mstop(object),
-    papply = mclapply,
+    papply = parallel::mclapply,
     mc.preschedule = FALSE,
-    fun = NULL
+    fun = NULL,
+    ...
   ) {
 
     checkmate::assert_class(object, "boostrq")
@@ -67,13 +83,12 @@ cvkrisk <-
 
         fun(mod)
       }
-
     }
 
     oobweights <- matrix(rep(weights, ncol(folds)), ncol = ncol(folds))
     oobweights[folds > 0] <- 0
 
-    if (identical(papply, mclapply)) {
+    if (identical(papply, parallel::mclapply)) {
       oobrisk <- papply(seq_len(ncol(folds)),
                         FUN = function(x) {
                           dummyfct(weights = folds[, x], oobweights = oobweights[, x], risk = "oobag")
@@ -93,124 +108,17 @@ cvkrisk <-
     }
 
     oobrisk <- matrix(unlist(oobrisk), nrow = length(grid), ncol = ncol(folds))
-    ## HUHU: /colSums(oobweights) ?! s. mboost cvrisk
-    oobrisk <- as.data.frame(oobrisk)
-    rownames(oobrisk) <- grid
-    colnames(oobrisk) <- 1:ncol(oobrisk)
+    oobrisk <- t(as.data.frame(oobrisk))
+    oobrisk <- oobrisk / colSums(oobweights)
+    rownames(oobrisk) <- 1:nrow(oobrisk)
+    colnames(oobrisk) <- grid
 
-    oobrisk.out <-
-      list(
-        mstop = grid,
-        type = paste(ncol(folds), "-fold Crossvalidation", sep = ""),
-        call = call,
-        cvdata = oobrisk
-      )
-
-    class(oobrisk.out) <- "cvkrisk"
-
-    oobrisk.out
+    attr(oobrisk, "risk") <- "Boosting Regression Quantiles"
+    attr(oobrisk, "call") <- call
+    attr(oobrisk, "mstop") <- grid
+    attr(oobrisk, "type") <- ifelse(!is.null(attr(folds, "type")),
+                                    attr(folds, "type"), "user-defined")
+    class(oobrisk) <- "cvrisk"
+    oobrisk
 
   }
-
-
-#' Folds for k-fold crossvalidation
-#'
-#' @param weights a numeric vector indicating which weights to used for the single observations.
-#' @param k number of folds
-#'
-#' @return a matrix with k columns and n rows, each column indicates
-#' the weights for the respective resampling iteration.
-#' @export
-#'
-#' @examples
-#'
-#' folds <- cv.folds(rep(1,32), k = 5)
-#' folds
-#'
-cv.folds <- function(weights, k = 5) {
-
-  checkmate::assert_int(k, lower = 1)
-  checkmate::assert_numeric(weights, lower = 0, any.missing = FALSE, null.ok = TRUE)
-
-  n <- length(weights)
-  fl <- floor(n/k)
-
-  folds <- c(rep(c(rep(0, fl), rep(1, n)), k - 1),
-             rep(0, n * k - (k - 1) * (fl + n)))
-
-  kfolds <- matrix(folds, nrow = n)[sample(1:n),, drop = FALSE] * weights
-  kfolds
-
-}
-
-
-#' printing k-fold cross validation results of boosting regression quantiles
-#'
-#' @param x object of class boostrq
-#' @param ... additional arguments passed to callies
-#'
-#' @return print shows a results of k-fold cross validation of boosting regression quantiles
-#' @export
-#'
-#' @examples
-#' boosted.rq <-
-#' boostrq(
-#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
-#'  data = mtcars,
-#'  mstop = 200,
-#'  nu = 0.1,
-#'  tau = 0.5
-#' )
-#'
-#' cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
-#'
-#' cvk.out
-#'
-print.cvkrisk <- function(x, ...) {
-
-  checkmate::assert_class(x, "cvkrisk")
-
-  cat("\n\t Cross-validated boosting regression quantiles", "\n\t",
-      x$call, "\n\n")
-  print(rowMeans(x$cvdata, na.rm = TRUE))
-  cat("\n\t Optimal number of boosting iterations:", mstop(x), "\n")
-  invisible(x)
-
-}
-
-
-#' Optimal number of iterations determined by k-fold cross validation
-#'
-#' @param object object of class boostrq
-#' @param ... additional arguments passed to callies
-#'
-#' @return Returns the optimal number of iterations for a boosting regression quantiles model
-#' determined by k-fold cross validation.
-#' @export
-#'
-#' @import mboost
-#'
-#' @examples
-#' boosted.rq <-
-#' boostrq(
-#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
-#'  data = mtcars,
-#'  mstop = 200,
-#'  nu = 0.1,
-#'  tau = 0.5
-#' )
-#'
-#' cvk.out <- cvkrisk(boosted.rq, grid = 0:mstop(boosted.rq))
-#'
-#' mstop(cvk.out)
-#'
-#' boosted.rq[mstop(cvk.out)]
-#'
-mstop.cvkrisk <- function(object, ...){
-
-  checkmate::assert_class(object, "cvkrisk")
-
-  object$mstop[which.min(rowSums(object$cvdata, na.rm = TRUE))]
-
-}
-

@@ -10,54 +10,84 @@
   q,
   PFER,
   grid = 0:mstop(x),
+  folds = stabs::subsample(x$weights, B = B),
   B = ifelse(sampling.type == "MB", 100, 50),
-  assumption = "none",
-  sampling.type = "MB",
-  papply = mclapply,
-  FWER,
+  assumption = "unimodal",
+  sampling.type = "SS",
+  papply = parallel::mclapply,
   verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{x}{test}
+\item{x}{a fitted model of class "boostrq"}
 
-\item{cutoff}{test}
+\item{cutoff}{cutoff between 0.5 and 1. Preferably a value between 0.6 and 0.9 should be used}
 
-\item{q}{test}
+\item{q}{number of (unique) selected componenents (base-learners) that are selected in each subsample.}
 
-\item{PFER}{test}
+\item{PFER}{upper bound for the per-family error rate. This specifies the amount of falsely selected
+base-learners, which is tolerated.}
 
-\item{grid}{stest}
+\item{grid}{a numeric vector of the form 0:m.}
 
-\item{B}{test}
+\item{folds}{a weight matrix with number of rows equal to the number of observations. Usually one should
+not change the default here as subsampling with a fraction of 1/2 is needed for the error bounds to hold.}
 
-\item{assumption}{test}
+\item{B}{umber of subsampling replicates. Per default, we use 50 complementary pairs for the
+error bounds of Shah & Samworth (2013) and 100 for the error bound derived in
+Meinshausen & Buehlmann (2010). As we use B complementray pairs in the former
+case this leads to 2B subsamples.}
 
-\item{sampling.type}{test}
+\item{assumption}{Defines the type of assumptions on the distributions of the selection probabilities
+and simultaneous selection probabilities. Only applicable for sampling.type = "SS". For
+sampling.type = "MB" we always use code"none".}
 
-\item{papply}{test}
+\item{sampling.type}{use sampling scheme of of Shah & Samworth (2013), i.e., with complementarty pairs
+(sampling.type = "SS"), or the original sampling scheme of Meinshausen & Buehlmann (2010).}
 
-\item{FWER}{test}
+\item{papply}{(parallel) apply function, defaults to mclapply. To run sequentially
+(i.e. not in parallel), one can use lapply.}
 
-\item{verbose}{test}
+\item{verbose}{logical (default: TRUE) that determines wether warnings should be issued.}
 
-\item{...}{test}
+\item{...}{additional arguments passed to callies}
 }
 \value{
-test
+An object of class stabsel.
 }
 \description{
-test
+Stability Selection for boosting regression quantiles
 }
 \examples{
 boosted.rq <-
 boostrq(
- formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+ formula = mpg ~ brq(cyl) + brq(hp) + brq(am) + brq(wt) + brq(drat),
  data = mtcars,
- mstop = 200,
+ mstop = 600,
  nu = 0.1,
  tau = 0.5
 )
+
+stabsel_parameters(
+ q = 3,
+ PFER = 1,
+ p = 5,
+ sampling.type = "SS",
+ assumption = "unimodal"
+)
+
+set.seed(100)
+
+brq.stabs <-
+stabsel(
+ x = boosted.rq,
+ q = 3,
+ PFER = 1,
+ sampling.type = "SS",
+ assumption = "unimodal"
+)
+
+brq.stabs
 
 }

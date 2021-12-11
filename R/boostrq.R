@@ -67,8 +67,8 @@ boostrq <-
       combine = "or"
     )
     checkmate::assert_int(mstop, lower = 0)
-    checkmate::assert_number(nu, upper = 1, lower = 0.00001)
-    checkmate::assert_number(tau, upper = 0.99999, lower = 0.00001)
+    checkmate::assert_number(nu, upper = 1, lower = 0)
+    checkmate::assert_number(tau, upper = 1, lower = 0)
     checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
     checkmate::assert_numeric(weights, lower = 0, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
     checkmate::assert_numeric(oobweights, lower = 0, any.missing = FALSE, null.ok = TRUE, len = nrow(data))

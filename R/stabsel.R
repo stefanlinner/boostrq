@@ -1,21 +1,28 @@
 #' Stability Selection for boosting regression quantiles
 #'
-#' test
+#' @param x a fitted model of class "boostrq"
+#' @param cutoff cutoff between 0.5 and 1. Preferably a value between 0.6 and 0.9 should be used
+#' @param q number of (unique) selected componenents (base-learners) that are selected in each subsample.
+#' @param PFER upper bound for the per-family error rate. This specifies the amount of falsely selected
+#' base-learners, which is tolerated.
+#' @param grid a numeric vector of the form 0:m.
+#' @param B umber of subsampling replicates. Per default, we use 50 complementary pairs for the
+#' error bounds of Shah & Samworth (2013) and 100 for the error bound derived in
+#' Meinshausen & Buehlmann (2010). As we use B complementray pairs in the former
+#' case this leads to 2B subsamples.
+#' @param assumption Defines the type of assumptions on the distributions of the selection probabilities
+#' and simultaneous selection probabilities. Only applicable for sampling.type = "SS". For
+#' sampling.type = "MB" we always use code"none".
+#' @param sampling.type use sampling scheme of of Shah & Samworth (2013), i.e., with complementarty pairs
+#' (sampling.type = "SS"), or the original sampling scheme of Meinshausen & Buehlmann (2010).
+#' @param papply (parallel) apply function, defaults to mclapply. To run sequentially
+#' (i.e. not in parallel), one can use lapply.
+#' @param verbose logical (default: TRUE) that determines wether warnings should be issued.
+#' @param ... additional arguments passed to callies
+#' @param folds a weight matrix with number of rows equal to the number of observations. Usually one should
+#' not change the default here as subsampling with a fraction of 1/2 is needed for the error bounds to hold.
 #'
-#' @param x test
-#' @param cutoff test
-#' @param q test
-#' @param PFER test
-#' @param grid stest
-#' @param B test
-#' @param assumption test
-#' @param sampling.type test
-#' @param papply test
-#' @param FWER test
-#' @param verbose test
-#' @param ... test
-#'
-#' @return test
+#' @return An object of class stabsel.
 #' @export
 #'
 #' @import stabs parallel
@@ -23,12 +30,33 @@
 #' @examples
 #' boosted.rq <-
 #' boostrq(
-#'  formula = mpg ~ brq(cyl * hp) + brq(am + wt),
+#'  formula = mpg ~ brq(cyl) + brq(hp) + brq(am) + brq(wt) + brq(drat),
 #'  data = mtcars,
-#'  mstop = 200,
+#'  mstop = 600,
 #'  nu = 0.1,
 #'  tau = 0.5
-#')
+#' )
+#'
+#' stabsel_parameters(
+#'  q = 3,
+#'  PFER = 1,
+#'  p = 5,
+#'  sampling.type = "SS",
+#'  assumption = "unimodal"
+#' )
+#'
+#' set.seed(100)
+#'
+#' brq.stabs <-
+#' stabsel(
+#'  x = boosted.rq,
+#'  q = 3,
+#'  PFER = 1,
+#'  sampling.type = "SS",
+#'  assumption = "unimodal"
+#' )
+#'
+#' brq.stabs
 #'
 stabsel.boostrq <-
   function(
@@ -37,15 +65,14 @@ stabsel.boostrq <-
     q,
     PFER ,
     grid = 0:mstop(x),
+    folds = stabs::subsample(x$weights, B = B),
     B = ifelse(sampling.type == "MB", 100, 50),
-    assumption = "none",
-    sampling.type = "MB",
-    papply = mclapply,
-    FWER,
+    assumption = "unimodal",
+    sampling.type = "SS",
+    papply = parallel::mclapply,
     verbose = TRUE,
     ...
   ) {
-
 
     checkmate::assert_class(x, "boostrq")
 
@@ -55,26 +82,26 @@ stabsel.boostrq <-
     n <- length(weights)
     cll <- match.call()
 
-    # checkmate::assert_number(cutoff, lower = 0.5, upper = 1, null.ok = TRUE)
-    checkmate::assert_int(q, lower = 0, upper = p)
-    # assertion on PFER & FWER See checks in stabsel_parameters
     checkmate::assert_integerish(grid, lower = 0, any.missing = FALSE)
     if (!isTRUE(all.equal(grid, 0:max(grid), check.attributes = FALSE))) {
       stop("grid must be of the form 0:m, i.e., starting at 0 with increments of 1")
     }
-    checkmate::assert_int(B) # what else?
+    checkmate::assert_matrix(folds, any.missing = FALSE, nrows = n)
+    checkmate::assert_int(B, lower = 1)
     checkmate::assert_choice(assumption, choices = c("unimodal", "r-concave", "none"))
     checkmate::assert_choice(sampling.type, choices = c("SS", "MB"))
     checkmate::assert_function(papply)
+    checkmate::assert_logical(verbose, any.missing = FALSE, len = 1)
 
     if(sampling.type == "MB" & assumption != "none") {
       warning("Assumption was changed to none, as sampling.type = 'MB'")
       assumption <- "none"
     }
 
-    k <- floor(n * 0.5)
-    indx <- rep(c(0, 1), c(n - k, k))
-    folds <- replicate(B, sample(indx))[sample(1:n),, drop = FALSE] * weights
+    if (ncol(folds) != B) {
+      B <- ncol(folds)
+      warning("B should be equal to number of folds, i.e., ncol(folds). B was set to ncol(folds)")
+    }
 
     pars <- stabs::stabsel_parameters(
       p = p,
@@ -84,8 +111,7 @@ stabsel.boostrq <-
       B = B,
       verbose = verbose,
       sampling.type = sampling.type,
-      assumption = assumption,
-      FWER = FWER
+      assumption = assumption
     )
 
     cutoff <- pars$cutoff
@@ -109,11 +135,10 @@ stabsel.boostrq <-
     }
 
     if (sampling.type == "SS") {
-      ## use complementary pairs
       folds <- cbind(folds, weights - folds)
     }
 
-    ss <- cvkrisk(
+    ss <- cvrisk(
       object = x,
       fun = fun,
       folds = folds,
@@ -156,4 +181,5 @@ stabsel.boostrq <-
     ret$call[[1]] <- as.name("stabsel")
     class(ret) <- c("stabsel_boostrq", "stabsel")
     ret
+
   }
