@@ -194,7 +194,7 @@ test_that("prediction output is correct", {
 
   newdat.1 <- mtcars
   newdat.2 <- mtcars[, c("mpg", "cyl", "hp", "am")]
-  newdat.3 <- mtcars[, c("mpg", "cyl", "hp", "am")]
+  newdat.3 <- mtcars[, c("cyl", "hp", "am")]
   newdat.3$mpg <- NA
 
   testthat::expect_output(str(boosted.rq.0$predict(newdata = newdat.1, aggregate = "sum")), "num [1:32]", fixed = TRUE)

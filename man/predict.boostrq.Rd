@@ -10,7 +10,7 @@
 \item{object}{a boostrq object}
 
 \item{newdata}{a data.frame (or data.table) including all covariates contained in the
-baselearners, as well as the response variable (with NA values)}
+baselearners}
 
 \item{which}{a subset of base-learners}
 
@@ -39,7 +39,7 @@ boostrq(
  tau = 0.5
 )
 
-predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1, wt = 3.125)
+predict.data <- data.frame(hp = 165, cyl = 6, am = 1, wt = 3.125)
 
 predict(boosted.rq, newdata = predict.data)
 

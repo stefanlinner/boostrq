@@ -230,7 +230,7 @@ mstop.boostrq <- function(object, ...) {
 #'
 #' @param object a boostrq object
 #' @param newdata a data.frame (or data.table) including all covariates contained in the
-#' baselearners, as well as the response variable (with NA values)
+#' baselearners
 #' @param which a subset of base-learners
 #' @param aggregate a character specifying how to aggregate coefficients of
 #' single base learners. The default returns the coefficient for the final number
@@ -253,7 +253,7 @@ mstop.boostrq <- function(object, ...) {
 #'  tau = 0.5
 #' )
 #'
-#' predict.data <- data.frame(mpg = NA, hp = 165, cyl = 6, am = 1, wt = 3.125)
+#' predict.data <- data.frame(hp = 165, cyl = 6, am = 1, wt = 3.125)
 #'
 #' predict(boosted.rq, newdata = predict.data)
 #'

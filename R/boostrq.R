@@ -396,8 +396,8 @@ boostrq <-
     ### Predicition function
     RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
-      checkmate::check_data_frame(newdata, min.rows = 1, min.cols = 2, col.names = "named")
-      checkmate::assert_subset(c(response, covariates), choices = names(newdata), empty.ok = FALSE)
+      checkmate::check_data_frame(newdata, min.rows = 1, min.cols = 2, col.names = "named", any.missing = FALSE)
+      checkmate::assert_subset(covariates, choices = names(newdata), empty.ok = FALSE)
       checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
       checkmate::assert_subset(which, choices = baselearner)
       checkmate::assert_character(aggregate, len = 1)
@@ -415,10 +415,7 @@ boostrq <-
                      stats::as.formula(
                        paste("~", x[["formula"]])
                      ),
-                     stats::model.frame(
-                       ~ .,
-                       data = newdata,
-                       na.action = "na.pass")
+                     newdata
                    )
                  )
                }
@@ -485,8 +482,6 @@ boostrq <-
 
 
       checkmate::assert_int(i, lower = 0)
-
-      browser()
 
       if(i <= count.m || i <= length(appearances)) {
         if(i != count.m){
