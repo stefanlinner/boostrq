@@ -104,7 +104,6 @@ residuals(boosted.rq)
 
 ### Model predictions
 dat.pred <- data.frame(
-  mpg = c(NA, NA), # the response variable has to be included in the new dataset!
   cyl = c(4, 6),
   hp = c(90, 134),
   wt = c(3.125, 2.485), 

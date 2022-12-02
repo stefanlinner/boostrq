@@ -344,7 +344,7 @@ boostrq <-
       checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
       checkmate::assert_subset(which, choices = baselearner)
       checkmate::assert_character(aggregate, len = 1)
-      checkmate::assert_choice(aggregate, choices = c("sum", "none", "cumsum"))
+      checkmate::assert_choice(aggregate, choices = c("sum_aggr", "sum", "none", "cumsum"))
 
       if(is.null(which)){
         which <- baselearner
@@ -352,6 +352,53 @@ boostrq <-
 
       if(count.m == 0) {
         return(list(offset = offset))
+      }
+
+      if(aggregate == "sum_aggr" & count.m > 0){
+        browser()
+        coefpath.sum <- lapply(which,
+                               function(x){
+                                 colSums(coefpath[[x]][1:count.m, , drop = FALSE])
+                               }
+        )
+
+        coef.names <-
+          unique(
+            unlist(
+              lapply(
+                coefpath.sum,
+                function(x){
+                  names(x)
+                }
+              )
+            )
+          )
+
+        coefpath.sum_aggr <-
+          unlist(
+            lapply(
+              coef.names,
+              function(name){
+                sum(
+                  unlist(
+                    lapply(
+                      coefpath.sum,
+                      function(x){
+                        x[name]
+                      }
+                    )
+                  ),
+                  na.rm = TRUE)
+              }
+            )
+          )
+
+        names(coefpath.sum_aggr) <- coef.names
+
+        coefpath.sum_aggr["(Intercept)"] <-
+          coefpath.sum_aggr["(Intercept)"] + offset
+
+        return(coefpath.sum_aggr)
       }
 
       if(aggregate == "none" & count.m > 0){

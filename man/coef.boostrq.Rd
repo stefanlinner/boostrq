@@ -16,7 +16,7 @@ single base learners. The default returns the coefficient for the final number
 of boosting iterations. "cumsum" returns a list with matrices (one per base-learner)
 with the cumulative coefficients for all iterations. "none" returns a list of
 matrices where the jth columns of the respective matrix contains coefficients
-of the base-learner of the jth boosting iteration.}
+of the base-learner of the jth boosting iteration.v "sum_aggr" ...}
 
 \item{...}{additional arguments passed to callies}
 }
