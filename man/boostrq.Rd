@@ -8,7 +8,7 @@ boostrq(
   formula,
   data,
   mstop = 100,
-  nu = 0.1,
+  nu = NULL,
   tau = 0.5,
   offset = NULL,
   weights = NULL,

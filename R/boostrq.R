@@ -486,6 +486,8 @@ boostrq <-
 
       checkmate::assert_int(i, lower = 0)
 
+      browser()
+
       if(i <= count.m || i <= length(appearances)) {
         if(i != count.m){
           count.m <<- i
