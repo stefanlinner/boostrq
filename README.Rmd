@@ -15,11 +15,6 @@ knitr::opts_chunk$set(
 
 # boostrq
 
-<!-- badges: start -->
-[![Travis build status](https://travis-ci.com/stefanlinner/boostrq.svg?branch=master)](https://travis-ci.com/stefanlinner/boostrq)
-[![R-CMD-check](https://github.com/stefanlinner/boostrq/workflows/R-CMD-check/badge.svg)](https://github.com/stefanlinner/boostrq/actions)
-<!-- badges: end -->
-
 Package for boosting regression quantiles (Bauer, Haupt, & Linner, 2021). The functionality as well as the implementation was heavily inspired by the great package for model-based boosting [mboost](https://github.com/boost-R/mboost).
 Until now, only the linear baselearner (brq) is implemented, the nonlinear baselearner (brqss) will follow soon.
 

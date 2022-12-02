@@ -3,13 +3,6 @@
 
 # boostrq
 
-<!-- badges: start -->
-
-[![Travis build
-status](https://travis-ci.com/stefanlinner/boostrq.svg?branch=master)](https://travis-ci.com/stefanlinner/boostrq)
-[![R-CMD-check](https://github.com/stefanlinner/boostrq/workflows/R-CMD-check/badge.svg)](https://github.com/stefanlinner/boostrq/actions)
-<!-- badges: end -->
-
 Package for boosting regression quantiles (Bauer, Haupt, & Linner,
 2021). The functionality as well as the implementation was heavily
 inspired by the great package for model-based boosting
@@ -35,6 +28,10 @@ simple example.
 ``` r
 ### Attaching the package to the search path
 library(boostrq)
+#> Lade nötiges Paket: mboost
+#> Lade nötiges Paket: parallel
+#> Lade nötiges Paket: stabs
+#> Warning: Paket 'stabs' wurde unter R Version 4.1.2 erstellt
 
 ### Fitting your first boosting regression quantiles model.
 boosted.rq <- 
@@ -199,6 +196,7 @@ predict(boosted.rq, newdata = dat.pred, aggregate = "sum")
 ```
 
 ``` r
+
 ### Update the number of iterations without to fully refit the model
 ### If mstop_new > mstop_current: The fitting process will start at the current number of iterations
 ### If mstop_new < mstop_current: The model result are subsetted, thus, the model is not refitted

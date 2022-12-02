@@ -61,11 +61,7 @@ boostrq <-
 
     ### Asserting input parameters
     checkmate::assert_formula(formula)
-    checkmate::assert(
-      checkmate::check_data_frame(data, any.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
-      checkmate::check_data_table(data, any.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named"),
-      combine = "or"
-    )
+    checkmate::check_data_frame(data, any.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named")
     checkmate::assert_int(mstop, lower = 0)
     checkmate::assert_number(nu, upper = 1, lower = 0)
     checkmate::assert_number(tau, upper = 1, lower = 0)
@@ -84,7 +80,7 @@ boostrq <-
 
     ### Checking response
     checkmate::assert_numeric(data[[response]], any.missing = FALSE, len = nrow(data))
-    y <- data[[response]]
+    y <- eval(formula[[2]], data)
 
     ### Setting up weights
     if(is.null(weights)){
@@ -138,7 +134,7 @@ boostrq <-
                stats::na.omit(
                  stats::model.matrix(
                    stats::as.formula(
-                     paste(response, "~", x[["formula"]])
+                     paste("~", x[["formula"]])
                    ),
                    data = data)
                )
@@ -396,11 +392,7 @@ boostrq <-
     ### Predicition function
     RETURN$predict <- function(newdata = NULL, which = NULL, aggregate = "sum"){
 
-      checkmate::assert(
-        checkmate::check_data_frame(newdata, min.rows = 1, min.cols = 2, col.names = "named"),
-        checkmate::check_data_table(newdata, min.rows = 1, min.cols = 2, col.names = "named"),
-        combine = "or"
-      )
+      checkmate::check_data_frame(newdata, min.rows = 1, min.cols = 2, col.names = "named")
       checkmate::assert_subset(c(response, covariates), choices = names(newdata), empty.ok = FALSE)
       checkmate::assert_character(which, max.len = length(baselearner), null.ok = TRUE)
       checkmate::assert_subset(which, choices = baselearner)
@@ -417,7 +409,7 @@ boostrq <-
                  stats::na.omit(
                    stats::model.matrix(
                      stats::as.formula(
-                       paste(response, "~", x[["formula"]])
+                       paste("~", x[["formula"]])
                      ),
                      stats::model.frame(
                        ~ .,
