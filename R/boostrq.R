@@ -49,7 +49,7 @@ boostrq <-
     formula,
     data,
     mstop = 100,
-    nu = 0.1,
+    nu = NULL,
     tau = 0.5,
     offset = NULL,
     weights = NULL,
@@ -63,7 +63,7 @@ boostrq <-
     checkmate::assert_formula(formula)
     checkmate::check_data_frame(data, any.missing = FALSE, min.rows = 1, min.cols = 2, col.names = "named")
     checkmate::assert_int(mstop, lower = 0)
-    checkmate::assert_number(nu, upper = 1, lower = 0)
+    checkmate::assert_number(nu, upper = 1, lower = 0, null.ok = TRUE)
     checkmate::assert_number(tau, upper = 1, lower = 0)
     checkmate::assert_numeric(offset, len = nrow(data), null.ok = TRUE)
     checkmate::assert_numeric(weights, lower = 0, any.missing = FALSE, null.ok = TRUE, len = nrow(data))
@@ -72,6 +72,10 @@ boostrq <-
     checkmate::assert_choice(risk, c("inbag", "oobag"))
     checkmate::assert_int(digits, lower = 1)
     checkmate::assert_logical(exact.fit, any.missing = FALSE, len = 1)
+
+    if(is.null(nu)){
+      nu <- -0.05 * abs(tau - 0.5) + 0.11
+    }
 
     ### Getting response variable name
     response <- all.vars(formula[[2]])
