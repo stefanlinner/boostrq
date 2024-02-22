@@ -45,7 +45,7 @@ boosted.rq <-
 ### Get some basic information about your model 
 boosted.rq$formula # the model formula
 #> mpg ~ brq(cyl * hp) + brq(am + wt)
-#> <environment: 0x0000020366eee4d8>
+#> <environment: 0x000002d865949d38>
 
 boosted.rq$nu # the learning rate
 #> [1] 0.1
