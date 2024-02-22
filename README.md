@@ -31,7 +31,6 @@ library(boostrq)
 #> Lade nötiges Paket: mboost
 #> Lade nötiges Paket: parallel
 #> Lade nötiges Paket: stabs
-#> Warning: Paket 'stabs' wurde unter R Version 4.1.2 erstellt
 
 ### Fitting your first boosting regression quantiles model.
 boosted.rq <- 
@@ -46,6 +45,7 @@ boosted.rq <-
 ### Get some basic information about your model 
 boosted.rq$formula # the model formula
 #> mpg ~ brq(cyl * hp) + brq(am + wt)
+#> <environment: 0x0000020366eee4d8>
 
 boosted.rq$nu # the learning rate
 #> [1] 0.1

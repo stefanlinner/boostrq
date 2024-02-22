@@ -1,4 +1,4 @@
-#' fitting a boosting regression quantiles model
+#' Fitting a boosting regression quantiles model
 #'
 #' Component-wise functional gradient boosting algorithm to fit a quantile
 #' regression model.
@@ -355,7 +355,6 @@ boostrq <-
       }
 
       if(aggregate == "sum_aggr" & count.m > 0){
-        browser()
         coefpath.sum <- lapply(which,
                                function(x){
                                  colSums(coefpath[[x]][1:count.m, , drop = FALSE])

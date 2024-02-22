@@ -47,6 +47,7 @@
 #'
 #' set.seed(100)
 #'
+#' \dontrun{
 #' brq.stabs <-
 #' stabsel(
 #'  x = boosted.rq,
@@ -57,6 +58,7 @@
 #' )
 #'
 #' brq.stabs
+#' }
 #'
 stabsel.boostrq <-
   function(
@@ -156,8 +158,6 @@ stabsel.boostrq <-
               " subsampling replicates to select ", sQuote("q"),
               " base-learners; Increase ", sQuote("mstop"),
               " before applying ", sQuote("stabsel"))
-
-
 
     ## HUHU: Nochmal drüber nachdenken, ob das so passt
     ## Der Unterschied mit brq ist natürlich, dass man auch 0 haben kann, welches einfach ignoriert wird

@@ -2,7 +2,7 @@
 % Please edit documentation in R/boostrq.R
 \name{boostrq}
 \alias{boostrq}
-\title{fitting a boosting regression quantiles model}
+\title{Fitting a boosting regression quantiles model}
 \usage{
 boostrq(
   formula,
