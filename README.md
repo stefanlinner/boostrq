@@ -4,7 +4,7 @@
 # boostrq
 
 Package for boosting regression quantiles (Bauer, Haupt, & Linner,
-2021). The functionality as well as the implementation was heavily
+2023). The functionality as well as the implementation was heavily
 inspired by the great package for model-based boosting
 [mboost](https://github.com/boost-R/mboost). Until now, only the linear
 baselearner (brq) is implemented, the nonlinear baselearner (brqss) will
