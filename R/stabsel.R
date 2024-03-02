@@ -45,9 +45,8 @@
 #'  assumption = "unimodal"
 #' )
 #'
+#' \donttest{
 #' set.seed(100)
-#'
-#' \dontrun{
 #' brq.stabs <-
 #' stabsel(
 #'  x = boosted.rq,
